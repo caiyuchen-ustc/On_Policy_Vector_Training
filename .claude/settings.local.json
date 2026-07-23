@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk 'NR>=1433 && NR<=1497 {ind=match\\($0,/[^ ]/\\); printf \"%d \\(indent %d\\): %s\\\\n\", NR, ind-1, substr\\($0,1,55\\)}' verl/workers/fsdp_workers.py)",
+      "Bash(cd *)",
+      "Bash(python -c \"import vllm; print\\('vllm', vllm.__version__\\)\")",
+      "Bash(nvidia-smi --query-gpu=memory.total,memory.used --format=csv)",
+      "Bash(nvidia-smi --query-gpu=index,memory.total,memory.used --format=csv,noheader)",
+      "Bash(bash -n examples/representation/1p5bopd.sh)",
+      "Bash(bash -n examples/representation/deepseek1p5b_brorl_opd_lora8.sh)",
+      "Read(//apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/verif/**)",
+      "Read(//apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/**)",
+      "Bash(find data *)",
+      "Bash(ls -la data/)",
+      "Bash(sed -n '1,120p' slime/slime/rollout/rm_hub/__init__.py)",
+      "Bash(/apdcephfs_zwfy3/share_302867165/xxucaxu/anaconda3/envs/verlopd/bin/python -c \"import langdetect, immutabledict, nltk; print\\('deps ok'\\)\")",
+      "Bash(/apdcephfs_zwfy3/share_302867165/xxucaxu/anaconda3/envs/verlopd/bin/python -c \"import immutabledict; print\\('immutabledict', immutabledict.__version__ if hasattr\\(immutabledict,'__version__'\\) else 'ok'\\)\")",
+      "Bash(/apdcephfs_zwfy3/share_302867165/xxucaxu/anaconda3/envs/verlopd/bin/python -c \"import nltk; print\\('nltk ok'\\)\")",
+      "Bash(/apdcephfs_zwfy3/share_302867165/xxucaxu/anaconda3/envs/verlopd/bin/python -c \"import absl; print\\('absl ok'\\)\")",
+      "Bash(timeout 20 curl -s -o /dev/null -w \"http_code=%{http_code} time=%{time_total}s\\\\n\" -x http://star-proxy.oa.com:3128 https://api.wandb.ai)",
+      "Bash(echo \"PROXY CONNECT FAILED rc=$?\")",
+      "Bash(pkill -9 -f \"verl.trainer.main_ppo\")",
+      "Bash(ray stop *)",
+      "Bash(/apdcephfs_zwfy3/share_302867165/xxucaxu/anaconda3/envs/verlopd/bin/ray stop *)",
+      "Bash(nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader)",
+      "Bash(nvidia-smi --query-gpu=index,memory.used --format=csv,noheader)",
+      "Bash(nvidia-smi --query-gpu=memory.used --format=csv,noheader)",
+      "Bash(awk 'NR%15==1 || NR>105')"
+    ]
+  }
+}

@@ -1,0 +1,160 @@
+# Format checks enforced on CI:
+# 1. Comments must appear above each field.
+# 2. There must be a blank line between each field.
+# 3. Inline comments (after a field on the same line) are not allowed.
+# 4. Indentation level is respected for nested fields.
+
+_target_: verl.workers.config.HFModelConfig
+
+# path to the huggingface model
+path: ~/models/deepseek-llm-7b-chat
+
+
+enable_trainable_token_vector: False
+
+
+# trainable token vector mode: single or multi
+trainable_token_vector_mode: single
+
+
+# number of trainable vectors per hooked layer when mode=multi
+trainable_token_vector_num: 1
+
+
+# coefficient sampling for multi-vector training: positive first-orthant hypersphere or simplex interpolation
+trainable_token_vector_sampling_method: hypersphere
+
+
+# output magnitude multiplier for injected steer vector
+trainable_token_vector_scale: 1.0
+
+
+# whether to replace fixed scale with a trainable scalar alpha
+trainable_token_vector_learnable_alpha: False
+
+
+# initialization value for the trainable scalar alpha
+trainable_token_vector_alpha_init: 0.0
+
+
+# staged training: none or warmup_expand
+trainable_token_vector_curriculum: none
+
+
+# train all basis vectors freely with uniform-mix coefficients for N steps before orthogonalization
+trainable_token_vector_warmup_steps: 0
+
+
+# optional absolute global step where the uniform-mix warmup phase ends; if set, overrides warmup_steps-derived boundary
+trainable_token_vector_warmup_end_step: null
+
+
+# optional second warmup after orthogonalization using deterministic bias weights before random sampling
+trainable_token_vector_secondary_freeze_steps: 0
+
+
+# optional absolute global step where the second curriculum phase ends; if set, overrides warmup_steps + secondary_freeze_steps
+trainable_token_vector_secondary_end_step: null
+
+
+# post-orthogonalization base weight for the first basis direction
+trainable_token_vector_primary_scale: 1.0
+
+
+# geometric decay base for later directions: weight_i = primary_scale / secondary_scale^i
+trainable_token_vector_secondary_scale: 1.05
+
+
+# optionally freeze the first basis direction after orthogonalization and keep training the remaining directions
+trainable_token_vector_freeze_primary_after_warmup: False
+
+
+trainable_token_vector_layer_idx: 16
+
+
+# optional inclusive layer range for trainable token vectors, e.g. [10, 30]
+trainable_token_vector_layer_start: null
+
+
+# optional inclusive layer range for trainable token vectors, e.g. [10, 30]
+trainable_token_vector_layer_end: null
+
+
+# whether to install a trainable token vector hook on every decoder layer
+trainable_token_vector_all_layers: False
+
+
+# force steer vector on prompt+response tokens (debug only)
+trainable_token_vector_force_all_tokens: False
+
+# train only attention q_proj bias (native model params; freeze k/v and all other params)
+train_q_bias_only: False
+
+# q_proj bias layer range (closed interval); null = all layers
+q_bias_layer_start: null
+q_bias_layer_end: null
+
+# train all params of a single decoder layer only (freeze all other layers & non-layer params)
+train_single_layer_only: False
+train_layer_idx: null
+
+# train only the MLP block of a single decoder layer (freeze everything else)
+train_single_mlp_only: False
+train_mlp_layer_idx: null
+
+# config to the huggingface config. In case it is not the same as path
+hf_config_path: null
+
+# path to the huggingface tokenizer. In case it is not the same as path
+tokenizer_path: null
+
+# whether to use shared memory for model loading
+use_shm: False
+
+# whether to trust remote code.
+trust_remote_code: False
+
+# custom chat template for the model
+custom_chat_template: null
+
+# whether to use external libs for the model
+external_lib: null
+
+# override hf config
+override_config: {}
+
+# whether to enable gradient checkpointing. Only valid when we use hf model definition
+enable_gradient_checkpointing: True
+
+# whether to enable activation offload. Only valid when we use hf model definition
+enable_activation_offload: False
+
+# whether to use remove padding. Only valid when we use hf model definition
+use_remove_padding: False
+
+# Set to positive value to enable LoRA (e.g., 32)
+lora_rank: 0
+
+# LoRA scaling factor
+lora_alpha: 16
+
+# Target modules for LoRA adaptation
+target_modules: all-linear
+
+# Exclude modules from LoRA adaptation
+exclude_modules: null
+
+# Path to pre-trained LoRA adapter to load for continued training
+lora_adapter_path: null
+
+# whether to use liger. Only valid when we use hf model definition
+use_liger: False
+
+# whether to use fused kernels.
+use_fused_kernels: False
+
+# fused kernel options.
+fused_kernel_options:
+
+  # the implementation backend for fused kernels.
+  impl_backend: torch

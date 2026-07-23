@@ -1,0 +1,399 @@
+#!/usr/bin/env bash
+
+if [ -z "${BASH_VERSION:-}" ]; then
+    exec bash "$0" "$@"
+fi
+
+set -euo pipefail
+
+# ============================================================================
+# Code On-Policy Distillation (OPD), G-OPD.
+#
+# Code reward path follows code_rl.sh (dapo code reward + optional sandbox_fusion),
+# while optimization follows OPD scripts (teacher-as-ref, reverse-KL advantages,
+# rollout importance-sampling correction).
+#
+# Training modes are selected by wrappers:
+#   * code_opd_fullparam.sh : LORA_RANK=0, no vector
+#   * code_opd_lora8.sh     : LORA_RANK>0, no vector
+#   * code_opd_single.sh    : single trainable token vector
+# ============================================================================
+
+source /apdcephfs_zwfy3/share_302867165/xxucaxu/anaconda3/bin/activate \
+       /apdcephfs_zwfy3/share_302867165/xxucaxu/anaconda3/envs/verlopd
+
+# Cluster/runtime env
+export WANDB_API_KEY=${WANDB_API_KEY:-ce312b01106d2ee09f038f0768661e2dc5f0872f}
+export RAY_DISABLE_MEMORY_MONITOR=${RAY_DISABLE_MEMORY_MONITOR:-1}
+export RAY_DEBUGGER_ENABLED=${RAY_DEBUGGER_ENABLED:-True}
+export USED_MODEL=${USED_MODEL:-no_api}
+
+# Network env
+# Default to no proxy. If a working proxy is required, pass it explicitly.
+unset http_proxy
+unset https_proxy
+unset HTTP_PROXY
+unset HTTPS_PROXY
+
+# Common hardware/env knobs
+export VLLM_ATTENTION_BACKEND=${VLLM_ATTENTION_BACKEND:-XFORMERS}
+export NCCL_DEBUG=${NCCL_DEBUG:-INFO}
+
+# -----------------------------
+# Experiment defaults
+# -----------------------------
+PROJECT_NAME=${PROJECT_NAME:-Code_DAPO}
+EXP_NAME_PREFIX=${EXP_NAME_PREFIX:-DAPO-Qwen3-8B-Code-RL}
+
+
+NNODES=${NNODES:-1}
+NGPUS_PER_NODE=${NGPUS_PER_NODE:-8}
+
+: "${MODEL_PATH:?MODEL_PATH must be set by wrapper or env}"
+BASE_MODEL_PATH=${BASE_MODEL_PATH:-"${MODEL_PATH}"}
+: "${TEACHER_MODEL_PATH:?TEACHER_MODEL_PATH must be set by wrapper or env}"
+
+TRAIN_FILE=${TRAIN_FILE:-"/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/G-OPD-Training-Data/Eurus/code_train.parquet"}
+CODE_VAL_FILE=${CODE_VAL_FILE:-"/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/G-OPD-Training-Data/Eurus/code_validation_100.parquet"}
+LCB_VAL_FILE=${LCB_VAL_FILE:-"/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/G-OPD-Training-Data/Eurus/livecodebench_v5_100.parquet"}
+TEST_FILES=${TEST_FILES:-"['${CODE_VAL_FILE}', '${LCB_VAL_FILE}']"}
+
+MAX_POSITION_EMBEDDINGS=${MAX_POSITION_EMBEDDINGS:-32768}
+
+# -----------------------------
+# Training mode (fullparam / lora / vector)
+# -----------------------------
+LORA_RANK=${LORA_RANK:-0}
+LORA_ALPHA=${LORA_ALPHA:-16}
+LORA_TARGET_MODULES=${LORA_TARGET_MODULES:-all-linear}
+
+ENABLE_TRAINABLE_TOKEN_VECTOR=${ENABLE_TRAINABLE_TOKEN_VECTOR:-false}
+TRAINABLE_TOKEN_VECTOR_LAYERS=${TRAINABLE_TOKEN_VECTOR_LAYERS:-10:25}
+TRAINABLE_TOKEN_VECTOR_MODE=${TRAINABLE_TOKEN_VECTOR_MODE:-single}
+TRAINABLE_TOKEN_VECTOR_NUM=${TRAINABLE_TOKEN_VECTOR_NUM:-1}
+TRAINABLE_TOKEN_VECTOR_SAMPLING_METHOD=${TRAINABLE_TOKEN_VECTOR_SAMPLING_METHOD:-hypersphere}
+TRAINABLE_TOKEN_VECTOR_SCALE=${TRAINABLE_TOKEN_VECTOR_SCALE:-0.1}
+TRAINABLE_TOKEN_VECTOR_LEARNABLE_ALPHA=${TRAINABLE_TOKEN_VECTOR_LEARNABLE_ALPHA:-false}
+TRAINABLE_TOKEN_VECTOR_ALPHA_INIT=${TRAINABLE_TOKEN_VECTOR_ALPHA_INIT:-0.0}
+TRAINABLE_TOKEN_VECTOR_CURRICULUM=${TRAINABLE_TOKEN_VECTOR_CURRICULUM:-none}
+TRAINABLE_TOKEN_VECTOR_WARMUP_STEPS=${TRAINABLE_TOKEN_VECTOR_WARMUP_STEPS:-0}
+TRAINABLE_TOKEN_VECTOR_WARMUP_END_STEP=${TRAINABLE_TOKEN_VECTOR_WARMUP_END_STEP:-null}
+TRAINABLE_TOKEN_VECTOR_SECONDARY_FREEZE_STEPS=${TRAINABLE_TOKEN_VECTOR_SECONDARY_FREEZE_STEPS:-0}
+TRAINABLE_TOKEN_VECTOR_SECONDARY_END_STEP=${TRAINABLE_TOKEN_VECTOR_SECONDARY_END_STEP:-null}
+TRAINABLE_TOKEN_VECTOR_PRIMARY_SCALE=${TRAINABLE_TOKEN_VECTOR_PRIMARY_SCALE:-1.0}
+TRAINABLE_TOKEN_VECTOR_SECONDARY_SCALE=${TRAINABLE_TOKEN_VECTOR_SECONDARY_SCALE:-1.0}
+TRAINABLE_TOKEN_VECTOR_FREEZE_PRIMARY_AFTER_WARMUP=${TRAINABLE_TOKEN_VECTOR_FREEZE_PRIMARY_AFTER_WARMUP:-false}
+TRAINABLE_TOKEN_VECTOR_FORCE_ALL_TOKENS=${TRAINABLE_TOKEN_VECTOR_FORCE_ALL_TOKENS:-false}
+
+# LoRA/FSDP rollout knobs
+MODEL_USE_SHM=${MODEL_USE_SHM:-false}
+ROLLOUT_LOAD_FORMAT=${ROLLOUT_LOAD_FORMAT:-dummy}
+ROLLOUT_LAYERED_SUMMON=${ROLLOUT_LAYERED_SUMMON:-false}
+
+VECTOR_ONLY_TRAINING=false
+if [ "${LORA_RANK}" -le 0 ] && [ "${ENABLE_TRAINABLE_TOKEN_VECTOR}" = "true" ]; then
+    VECTOR_ONLY_TRAINING=true
+fi
+
+LAYER_TAG=${TRAINABLE_TOKEN_VECTOR_LAYERS//:/-}
+if [ "${LORA_RANK}" -gt 0 ]; then
+    TRAIN_TAG="lora_r${LORA_RANK}"
+elif [ "${ENABLE_TRAINABLE_TOKEN_VECTOR}" = "true" ]; then
+    TRAIN_TAG="singlev_layers${LAYER_TAG}"
+else
+    TRAIN_TAG="fullparam"
+fi
+
+# -----------------------------
+# OPD algorithm / optimization
+# -----------------------------
+ADV_ESTIMATOR=${ADV_ESTIMATOR:-grpo}
+ROLLOUT_IS=${ROLLOUT_IS:-token}
+ROLLOUT_IS_THRESHOLD=${ROLLOUT_IS_THRESHOLD:-5.0}
+ACTOR_ONLY_REVERSE_KL_ADVANTAGES=${ACTOR_ONLY_REVERSE_KL_ADVANTAGES:-true}
+
+MAX_PROMPT_LENGTH=${MAX_PROMPT_LENGTH:-1024*2}
+MAX_RESPONSE_LENGTH=${MAX_RESPONSE_LENGTH:-1024*16}
+MAX_PROMPT_LENGTH=$((MAX_PROMPT_LENGTH))
+MAX_RESPONSE_LENGTH=$((MAX_RESPONSE_LENGTH))
+
+ENABLE_OVERLONG_BUFFER=${ENABLE_OVERLONG_BUFFER:-true}
+OVERLONG_BUFFER_LEN=${OVERLONG_BUFFER_LEN:-1024*4}
+OVERLONG_PENALTY_FACTOR=${OVERLONG_PENALTY_FACTOR:-1.0}
+OVERLONG_BUFFER_LEN=$((OVERLONG_BUFFER_LEN))
+
+ENABLE_FILTER_GROUPS=${ENABLE_FILTER_GROUPS:-true}
+FILTER_GROUPS_METRIC=${FILTER_GROUPS_METRIC:-acc}
+MAX_NUM_GEN_BATCHES=${MAX_NUM_GEN_BATCHES:-10}
+MAX_NUM_GEN_BATCHES=$((MAX_NUM_GEN_BATCHES))
+
+: "${TRAIN_PROMPT_BSZ:?TRAIN_PROMPT_BSZ must be set by wrapper or env}"
+TRAIN_PROMPT_BSZ=$((TRAIN_PROMPT_BSZ))
+GEN_PROMPT_BSZ=${GEN_PROMPT_BSZ:-$((TRAIN_PROMPT_BSZ * 1))}
+GEN_PROMPT_BSZ=$((GEN_PROMPT_BSZ))
+: "${N_RESP_PER_PROMPT:?N_RESP_PER_PROMPT must be set by wrapper or env}"
+: "${TRAIN_PROMPT_MINI_BSZ:?TRAIN_PROMPT_MINI_BSZ must be set by wrapper or env}"
+PPO_MICRO_BATCH_SIZE_PER_GPU=${PPO_MICRO_BATCH_SIZE_PER_GPU:-1}
+
+TRAIN_DTYPE=${TRAIN_DTYPE:-bfloat16}
+: "${ACTOR_LR:?ACTOR_LR must be set by wrapper or env}"
+
+USE_DYNAMIC_BSZ=${USE_DYNAMIC_BSZ:-True}
+ACTOR_PPO_MAX_TOKEN_LEN_PER_GPU=${ACTOR_PPO_MAX_TOKEN_LEN_PER_GPU:-$((MAX_PROMPT_LENGTH + MAX_RESPONSE_LENGTH))}
+INFER_PPO_MAX_TOKEN_LEN_PER_GPU=${INFER_PPO_MAX_TOKEN_LEN_PER_GPU:-$((MAX_PROMPT_LENGTH + MAX_RESPONSE_LENGTH))}
+ACTOR_PPO_MAX_TOKEN_LEN_PER_GPU=$((ACTOR_PPO_MAX_TOKEN_LEN_PER_GPU))
+INFER_PPO_MAX_TOKEN_LEN_PER_GPU=$((INFER_PPO_MAX_TOKEN_LEN_PER_GPU))
+
+OFFLOAD=${OFFLOAD:-false}
+SP_SIZE=${SP_SIZE:-8}
+GEN_TP=${GEN_TP:-2}
+FSDP_SIZE=${FSDP_SIZE:-8}
+
+TEMPERATURE=${TEMPERATURE:-1.0}
+TOP_P=${TOP_P:-1.0}
+TOP_K=${TOP_K:--1}
+VAL_TOP_P=${VAL_TOP_P:-0.7}
+
+VLLM_STEER_DEBUG_ONCE=${VLLM_STEER_DEBUG_ONCE:-true}
+VLLM_ENFORCE_EAGER=${VLLM_ENFORCE_EAGER:-true}
+
+# -----------------------------
+# Code sandbox
+# -----------------------------
+SANDBOX_FUSION_URL=${SANDBOX_FUSION_URL:-}
+SANDBOX_MAX_CONCURRENT=${SANDBOX_MAX_CONCURRENT:-32}
+SANDBOX_MEMORY_LIMIT_MB=${SANDBOX_MEMORY_LIMIT_MB:-4096}
+SANDBOX_RUN_TIMEOUT=${SANDBOX_RUN_TIMEOUT:-1}
+SANDBOX_MAX_CASES=${SANDBOX_MAX_CASES:-5}
+SANDBOX_VAL_MAX_CASES=${SANDBOX_VAL_MAX_CASES:-5}
+
+# -----------------------------
+# Logging / checkpoint
+# -----------------------------
+TEST_FREQ=${TEST_FREQ:-5}
+TOTAL_EPOCHS=${TOTAL_EPOCHS:-10}
+TOTAL_TRAINING_STEPS=${TOTAL_TRAINING_STEPS:-1000}
+VAL_BEFORE_TRAIN=${VAL_BEFORE_TRAIN:-True}
+LOG_VAL_GENERATIONS=${LOG_VAL_GENERATIONS:-10}
+
+DEFAULT_SAVE_FREQ=25
+if [ "${VECTOR_ONLY_TRAINING}" = "true" ]; then
+    DEFAULT_SAVE_FREQ=-1
+fi
+SAVE_FREQ=${SAVE_FREQ:-${DEFAULT_SAVE_FREQ}}
+
+DEFAULT_SAVE_VECTOR=false
+if [ "${VECTOR_ONLY_TRAINING}" = "true" ]; then
+    DEFAULT_SAVE_VECTOR=true
+fi
+SAVE_VECTOR=${SAVE_VECTOR:-${DEFAULT_SAVE_VECTOR}}
+
+DEFAULT_LOCAL_DIR_BASE=${DEFAULT_LOCAL_DIR_BASE:-"/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/examples/code_opd/repre_qwen3-4b-code-opd"}
+DEFAULT_LOCAL_DIR=${DEFAULT_LOCAL_DIR:-"${DEFAULT_LOCAL_DIR_BASE}/${TRAIN_TAG}_lr${ACTOR_LR}"}
+SAVE_VECTOR_BASE_DIR=${SAVE_VECTOR_BASE_DIR:-"/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/code_opd/trainable_vectors"}
+SAVE_VECTOR_DIR=${SAVE_VECTOR_DIR:-"${SAVE_VECTOR_BASE_DIR}/${TRAIN_TAG}_lr${ACTOR_LR}"}
+
+EXPERIMENT_NAME=${EXPERIMENT_NAME:-"${EXP_NAME_PREFIX}_${TRAIN_TAG}_lr${ACTOR_LR}"}
+
+LAYER_ARGS=()
+case "${TRAINABLE_TOKEN_VECTOR_LAYERS}" in
+    all)
+        LAYER_ARGS+=(
+            actor_rollout_ref.model.trainable_token_vector_all_layers=true
+            actor_rollout_ref.model.trainable_token_vector_layer_start=null
+            actor_rollout_ref.model.trainable_token_vector_layer_end=null
+        )
+        ;;
+    *:*)
+        IFS=':' read -r VECTOR_LAYER_START VECTOR_LAYER_END <<< "${TRAINABLE_TOKEN_VECTOR_LAYERS}"
+        if [ -z "${VECTOR_LAYER_START}" ] || [ -z "${VECTOR_LAYER_END}" ]; then
+            echo "Invalid TRAINABLE_TOKEN_VECTOR_LAYERS=${TRAINABLE_TOKEN_VECTOR_LAYERS}, expected start:end or single idx or all" >&2
+            exit 1
+        fi
+        LAYER_ARGS+=(
+            actor_rollout_ref.model.trainable_token_vector_all_layers=false
+            actor_rollout_ref.model.trainable_token_vector_layer_start=${VECTOR_LAYER_START}
+            actor_rollout_ref.model.trainable_token_vector_layer_end=${VECTOR_LAYER_END}
+        )
+        ;;
+    *)
+        VECTOR_LAYER_IDX="${TRAINABLE_TOKEN_VECTOR_LAYERS}"
+        LAYER_ARGS+=(
+            actor_rollout_ref.model.trainable_token_vector_all_layers=false
+            actor_rollout_ref.model.trainable_token_vector_layer_idx=${VECTOR_LAYER_IDX}
+            actor_rollout_ref.model.trainable_token_vector_layer_start=null
+            actor_rollout_ref.model.trainable_token_vector_layer_end=null
+        )
+        ;;
+esac
+
+MODEL_ARGS=(
+    actor_rollout_ref.model.path="${MODEL_PATH}"
+    +actor_rollout_ref.model.override_config.max_position_embeddings=${MAX_POSITION_EMBEDDINGS}
+    actor_rollout_ref.model.lora_rank=${LORA_RANK}
+    actor_rollout_ref.model.lora_alpha=${LORA_ALPHA}
+    actor_rollout_ref.model.target_modules=${LORA_TARGET_MODULES}
+    actor_rollout_ref.model.enable_trainable_token_vector=${ENABLE_TRAINABLE_TOKEN_VECTOR}
+    actor_rollout_ref.model.trainable_token_vector_mode=${TRAINABLE_TOKEN_VECTOR_MODE}
+    actor_rollout_ref.model.trainable_token_vector_num=${TRAINABLE_TOKEN_VECTOR_NUM}
+    actor_rollout_ref.model.trainable_token_vector_sampling_method=${TRAINABLE_TOKEN_VECTOR_SAMPLING_METHOD}
+    actor_rollout_ref.model.trainable_token_vector_scale=${TRAINABLE_TOKEN_VECTOR_SCALE}
+    actor_rollout_ref.model.trainable_token_vector_learnable_alpha=${TRAINABLE_TOKEN_VECTOR_LEARNABLE_ALPHA}
+    actor_rollout_ref.model.trainable_token_vector_alpha_init=${TRAINABLE_TOKEN_VECTOR_ALPHA_INIT}
+    actor_rollout_ref.model.trainable_token_vector_curriculum=${TRAINABLE_TOKEN_VECTOR_CURRICULUM}
+    actor_rollout_ref.model.trainable_token_vector_warmup_steps=${TRAINABLE_TOKEN_VECTOR_WARMUP_STEPS}
+    actor_rollout_ref.model.trainable_token_vector_warmup_end_step=${TRAINABLE_TOKEN_VECTOR_WARMUP_END_STEP}
+    actor_rollout_ref.model.trainable_token_vector_secondary_freeze_steps=${TRAINABLE_TOKEN_VECTOR_SECONDARY_FREEZE_STEPS}
+    actor_rollout_ref.model.trainable_token_vector_secondary_end_step=${TRAINABLE_TOKEN_VECTOR_SECONDARY_END_STEP}
+    actor_rollout_ref.model.trainable_token_vector_primary_scale=${TRAINABLE_TOKEN_VECTOR_PRIMARY_SCALE}
+    actor_rollout_ref.model.trainable_token_vector_secondary_scale=${TRAINABLE_TOKEN_VECTOR_SECONDARY_SCALE}
+    actor_rollout_ref.model.trainable_token_vector_freeze_primary_after_warmup=${TRAINABLE_TOKEN_VECTOR_FREEZE_PRIMARY_AFTER_WARMUP}
+    actor_rollout_ref.model.trainable_token_vector_force_all_tokens=${TRAINABLE_TOKEN_VECTOR_FORCE_ALL_TOKENS}
+    actor_rollout_ref.model.use_shm=${MODEL_USE_SHM}
+    actor_rollout_ref.model.use_remove_padding=True
+    actor_rollout_ref.model.enable_gradient_checkpointing=True
+    +actor_rollout_ref.model.base_model_path="${BASE_MODEL_PATH}"
+    +actor_rollout_ref.ref.model.path="${TEACHER_MODEL_PATH}"
+    "${LAYER_ARGS[@]}"
+)
+
+DATA_ARGS=(
+    data.train_files="${TRAIN_FILE}"
+    data.val_files="${TEST_FILES}"
+    data.prompt_key=prompt
+    data.truncation=left
+    data.max_prompt_length=${MAX_PROMPT_LENGTH}
+    data.max_response_length=${MAX_RESPONSE_LENGTH}
+    data.train_batch_size=${TRAIN_PROMPT_BSZ}
+    +data.gen_batch_size=${GEN_PROMPT_BSZ}
+    data.return_raw_chat=True
+    +data.apply_chat_template_kwargs.enable_thinking=False
+)
+
+ALGO_ARGS=(
+    algorithm.adv_estimator=${ADV_ESTIMATOR}
+    algorithm.rollout_correction.rollout_is=${ROLLOUT_IS}
+    algorithm.rollout_correction.rollout_is_threshold=${ROLLOUT_IS_THRESHOLD}
+    algorithm.rollout_correction.rollout_rs=null
+    algorithm.rollout_correction.bypass_mode=false
+    algorithm.use_kl_in_reward=False
+    +algorithm.filter_groups.enable=${ENABLE_FILTER_GROUPS}
+    +algorithm.filter_groups.metric=${FILTER_GROUPS_METRIC}
+    +algorithm.filter_groups.max_num_gen_batches=${MAX_NUM_GEN_BATCHES}
+)
+
+ACTOR_ARGS=(
+    actor_rollout_ref.actor.use_kl_loss=True
+    actor_rollout_ref.actor.kl_loss_coef=0
+    actor_rollout_ref.actor.kl_loss_type=low_var_kl
+    actor_rollout_ref.actor.use_dynamic_bsz=${USE_DYNAMIC_BSZ}
+    actor_rollout_ref.actor.ppo_max_token_len_per_gpu=${ACTOR_PPO_MAX_TOKEN_LEN_PER_GPU}
+    actor_rollout_ref.actor.optim.lr=${ACTOR_LR}
+    actor_rollout_ref.actor.optim.lr_warmup_steps=10
+    actor_rollout_ref.actor.optim.weight_decay=0.1
+    actor_rollout_ref.actor.ppo_mini_batch_size=${TRAIN_PROMPT_MINI_BSZ}
+    actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=${PPO_MICRO_BATCH_SIZE_PER_GPU}
+    actor_rollout_ref.actor.policy_loss.only_reverse_kl_advantages=${ACTOR_ONLY_REVERSE_KL_ADVANTAGES}
+    actor_rollout_ref.actor.fsdp_config.param_offload=${OFFLOAD}
+    actor_rollout_ref.actor.fsdp_config.optimizer_offload=${OFFLOAD}
+    actor_rollout_ref.actor.fsdp_config.fsdp_size=${FSDP_SIZE}
+    actor_rollout_ref.actor.fsdp_config.use_orig_params=True
+    actor_rollout_ref.actor.fsdp_config.dtype=${TRAIN_DTYPE}
+    actor_rollout_ref.actor.fsdp_config.model_dtype=fp32
+    actor_rollout_ref.actor.entropy_coeff=0
+    actor_rollout_ref.actor.grad_clip=1.0
+    actor_rollout_ref.actor.ulysses_sequence_parallel_size=${SP_SIZE}
+)
+
+ROLLOUT_ARGS=(
+    actor_rollout_ref.rollout.calculate_log_probs=true
+    actor_rollout_ref.rollout.n=${N_RESP_PER_PROMPT}
+    actor_rollout_ref.rollout.name=vllm
+    actor_rollout_ref.rollout.prompt_length=${MAX_PROMPT_LENGTH}
+    actor_rollout_ref.rollout.response_length=${MAX_RESPONSE_LENGTH}
+    actor_rollout_ref.rollout.dtype=${TRAIN_DTYPE}
+    actor_rollout_ref.rollout.log_prob_use_dynamic_bsz=${USE_DYNAMIC_BSZ}
+    actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu=${INFER_PPO_MAX_TOKEN_LEN_PER_GPU}
+    actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=1
+    actor_rollout_ref.rollout.tensor_model_parallel_size=${GEN_TP}
+    actor_rollout_ref.rollout.gpu_memory_utilization=0.80
+    actor_rollout_ref.rollout.enable_chunked_prefill=True
+    actor_rollout_ref.rollout.max_num_batched_tokens=$((MAX_PROMPT_LENGTH + MAX_RESPONSE_LENGTH))
+    actor_rollout_ref.rollout.temperature=${TEMPERATURE}
+    actor_rollout_ref.rollout.top_p=${TOP_P}
+    actor_rollout_ref.rollout.top_k=${TOP_K}
+    actor_rollout_ref.rollout.load_format=${ROLLOUT_LOAD_FORMAT}
+    actor_rollout_ref.rollout.layered_summon=${ROLLOUT_LAYERED_SUMMON}
+    actor_rollout_ref.rollout.enforce_eager=${VLLM_ENFORCE_EAGER}
+    actor_rollout_ref.rollout.val_kwargs.temperature=${TEMPERATURE}
+    actor_rollout_ref.rollout.val_kwargs.top_p=${VAL_TOP_P}
+    actor_rollout_ref.rollout.val_kwargs.top_k=${TOP_K}
+    actor_rollout_ref.rollout.val_kwargs.do_sample=True
+    actor_rollout_ref.rollout.val_kwargs.n=4
+)
+
+REF_ARGS=(
+    actor_rollout_ref.ref.log_prob_use_dynamic_bsz=${USE_DYNAMIC_BSZ}
+    actor_rollout_ref.ref.log_prob_max_token_len_per_gpu=${INFER_PPO_MAX_TOKEN_LEN_PER_GPU}
+    actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=1
+    actor_rollout_ref.ref.fsdp_config.param_offload=${OFFLOAD}
+    actor_rollout_ref.ref.fsdp_config.use_orig_params=True
+    actor_rollout_ref.ref.fsdp_config.dtype=${TRAIN_DTYPE}
+    actor_rollout_ref.ref.fsdp_config.model_dtype=fp32
+    actor_rollout_ref.ref.ulysses_sequence_parallel_size=${SP_SIZE}
+)
+
+TRAINER_ARGS=(
+    trainer.logger='["console","wandb"]'
+    trainer.project_name="${PROJECT_NAME}"
+    trainer.experiment_name="${EXPERIMENT_NAME}"
+    trainer.n_gpus_per_node=${NGPUS_PER_NODE}
+    trainer.nnodes=${NNODES}
+    trainer.val_before_train=${VAL_BEFORE_TRAIN}
+    trainer.test_freq=${TEST_FREQ}
+    trainer.save_freq=${SAVE_FREQ}
+    trainer.total_epochs=${TOTAL_EPOCHS}
+    trainer.total_training_steps=${TOTAL_TRAINING_STEPS}
+    trainer.default_local_dir="${DEFAULT_LOCAL_DIR}"
+    trainer.resume_mode=auto
+    trainer.log_val_generations=${LOG_VAL_GENERATIONS}
+    trainer.enable_iterative_test=False
+    trainer.save_vector=${SAVE_VECTOR}
+    trainer.save_vector_dir="${SAVE_VECTOR_DIR}"
+)
+
+REWARD_ARGS=(
+    reward_model.reward_manager=dapo
+    +reward_model.reward_kwargs.overlong_buffer_cfg.enable=${ENABLE_OVERLONG_BUFFER}
+    +reward_model.reward_kwargs.overlong_buffer_cfg.len=${OVERLONG_BUFFER_LEN}
+    +reward_model.reward_kwargs.overlong_buffer_cfg.penalty_factor=${OVERLONG_PENALTY_FACTOR}
+    +reward_model.reward_kwargs.overlong_buffer_cfg.log=False
+    +reward_model.reward_kwargs.max_resp_len=${MAX_RESPONSE_LENGTH}
+)
+
+if [ -n "${SANDBOX_FUSION_URL}" ]; then
+    echo "[code_opd] Using sandbox_fusion for code reward: ${SANDBOX_FUSION_URL} (run_timeout=${SANDBOX_RUN_TIMEOUT}s train_max_cases=${SANDBOX_MAX_CASES} val_max_cases=${SANDBOX_VAL_MAX_CASES})"
+    REWARD_ARGS+=(
+        reward_model.sandbox_fusion.url="${SANDBOX_FUSION_URL}"
+        reward_model.sandbox_fusion.max_concurrent=${SANDBOX_MAX_CONCURRENT}
+        reward_model.sandbox_fusion.memory_limit_mb=${SANDBOX_MEMORY_LIMIT_MB}
+        +reward_model.sandbox_fusion.run_timeout=${SANDBOX_RUN_TIMEOUT}
+        +reward_model.sandbox_fusion.max_cases=${SANDBOX_MAX_CASES}
+        +reward_model.sandbox_fusion.val_max_cases=${SANDBOX_VAL_MAX_CASES}
+    )
+else
+    echo "[code_opd] SANDBOX_FUSION_URL not set -> using in-process prime_code for code reward."
+fi
+
+export PYTHONUNBUFFERED=1
+export VERL_VLLM_STEER_DEBUG_ONCE=${VLLM_STEER_DEBUG_ONCE}
+
+python3 -m verl.trainer.main_ppo \
+    "${DATA_ARGS[@]}" \
+    "${ALGO_ARGS[@]}" \
+    "${MODEL_ARGS[@]}" \
+    "${ACTOR_ARGS[@]}" \
+    "${ROLLOUT_ARGS[@]}" \
+    "${REF_ARGS[@]}" \
+    "${REWARD_ARGS[@]}" \
+    "${TRAINER_ARGS[@]}" "$@"

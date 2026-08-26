@@ -1,0 +1,21 @@
+/apdcephfs_zwfy3/share_302867165/xxucaxu/anaconda3/envs/verlopd/lib/python3.10/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+[chemistry] 30 prompts from /apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/sciknoweval/sciknoweval_validation.parquet
+Sliding Window Attention is enabled but not implemented for `sdpa`; unexpected results may be encountered.
+/apdcephfs_zwfy3/share_302867165/xxucaxu/anaconda3/envs/verlopd/lib/python3.10/site-packages/transformers/generation/configuration_utils.py:631: UserWarning: `do_sample` is set to `False`. However, `temperature` is set to `0.6` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+  warnings.warn(
+/apdcephfs_zwfy3/share_302867165/xxucaxu/anaconda3/envs/verlopd/lib/python3.10/site-packages/transformers/generation/configuration_utils.py:636: UserWarning: `do_sample` is set to `False`. However, `top_p` is set to `0.95` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `top_p`.
+  warnings.warn(
+  25/30
+  L5: N=13613 top1 var ratio=0.988
+  L6: N=13613 top1 var ratio=0.986
+  L7: N=13613 top1 var ratio=0.983
+  L8: N=13613 top1 var ratio=0.982
+  L9: N=13613 top1 var ratio=0.980
+  L10: N=13613 top1 var ratio=0.979
+  L11: N=13613 top1 var ratio=0.977
+  L12: N=13613 top1 var ratio=0.976
+  L13: N=13613 top1 var ratio=0.972
+  L14: N=13613 top1 var ratio=0.970
+  L15: N=13613 top1 var ratio=0.967
+[ok] saved /apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/cache/act_stats_chemistry.pt

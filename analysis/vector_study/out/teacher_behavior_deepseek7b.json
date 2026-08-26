@@ -1,0 +1,22 @@
+{
+  "teacher": {
+    "reflect_per1k": 12.632,
+    "reflect_hitrate": 1.0,
+    "reflect_total": 580,
+    "trans_per1k": 33.149,
+    "trans_hitrate": 1.0,
+    "trans_total": 1522,
+    "n_gen": 64,
+    "avg_words": 717.4
+  },
+  "base": {
+    "reflect_per1k": 5.961,
+    "reflect_hitrate": 0.766,
+    "reflect_total": 134,
+    "trans_per1k": 9.965,
+    "trans_hitrate": 1.0,
+    "trans_total": 224,
+    "n_gen": 64,
+    "avg_words": 351.2
+  }
+}

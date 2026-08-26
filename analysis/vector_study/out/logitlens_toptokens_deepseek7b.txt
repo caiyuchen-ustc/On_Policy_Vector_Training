@@ -1,0 +1,64 @@
+# deepseek7b  random_baseline_norm_entropy=0.9594
+
+[singlev_layers0-10_lr1e-1 | L0 | normed | H_norm=0.918 top1=0.001]  Gross |  ( |  gross |  Der |  stand | , |  Cr |   | . |  Gal |  deriv |  Sol | shake | lass |  x
+[singlev_layers0-10_lr1e-1 | L1 | normed | H_norm=0.934 top1=0.001]  fair |  core | Eventually |  poly | irm | expanded | ED |  – | lect |  Grand |  Atkins | 丁 | -----------\n |  buzz |  hors
+[singlev_layers0-10_lr1e-1 | L2 | normed | H_norm=0.956 top1=0.001]  intents |  fart |  coy |  marshal | irt |  AAC |  coax |  THR |  fortunate |  HOLD | FromFile | ítica | /my |  subs | -plus
+[singlev_layers0-10_lr1e-1 | L3 | normed | H_norm=0.955 top1=0.000] piel | Frameworks |  replacement |  Easily |  Floating |  eyes |  offending | 接地 |  normalized | sla | /id |  Revised |  brace | )>> | 跋
+[singlev_layers0-10_lr1e-1 | L4 | normed | H_norm=0.958 top1=0.000]  subjective | 面包 |  Conan |  unconditional |  Julius |  indirectly |  ink |  location |  GX | 热门 |  underestimate | -neutral |  underground |  Sche | 是最
+[singlev_layers0-10_lr1e-1 | L5 | normed | H_norm=0.945 top1=0.001] ˣ |  genders |  best |  Dit |  cloud | cat |  cat |  practitioner |  dignity |  either |  Inspector | 格 |  closest |  ground |  Ba
+[singlev_layers0-10_lr1e-1 | L6 | normed | H_norm=0.950 top1=0.001]  improv | Tester |  mutil | illas |  archetype |  sorts |  impost |  abide |  accus | agne |  perpetual |  monumental | wald | isch | ingly
+[singlev_layers0-10_lr1e-1 | L7 | normed | H_norm=0.956 top1=0.001]  negatively |  desn |  Cele | isha | ’: | 说完 | .'"\n\n | imes |  branches |  Yup |  aggressive | CED |  dissip | omatic |  imm
+[singlev_layers0-10_lr1e-1 | L8 | normed | H_norm=0.960 top1=0.001]  frag | terr |  Rogers | rtle |  SCN | 有多大 | verbs |  (!( | acia | OPEN |  Trom | scal | .ga | 索 |  }},\n
+[singlev_layers0-10_lr1e-1 | L9 | normed | H_norm=0.953 top1=0.001] panse |  separ |  coerc | igned | aci |  McN |  signed |  Keto | 对立 |  Something | signed |  harmony |  Cas | oped |  unb
+[singlev_layers0-10_lr1e-1 | L10 | normed | H_norm=0.963 top1=0.000] Broad | cala | kit | \s | 一天 | ivant | elles | adi | BK | 顿 | enheim |  According | 条评论 |  Nuevo |  Reggie
+[singlev_layers0-1_lr1e-1 | L0 | normed | H_norm=0.903 top1=0.010]  ( |   |  first |  B | , | … | 1 |  a |  and |  A | B |  or |   | <｜end▁of▁sentence｜> | “
+[singlev_layers0-1_lr1e-1 | L1 | normed | H_norm=0.947 top1=0.000]  Ping |  Colon |  isot | fn |  fox | Official |  cast | 有条件 |  rec | anst |  pro |  Adams | ={({ |  worsening | boarding
+[singlev_layers10-11_lr1e-1 | L10 | normed | H_norm=0.947 top1=0.001] 虚 |  Contr | contr |  attentive |  advancement | ))))\n\n | istic | 绕 | CV |  Correction |  dick |  assembler | -establish |  contractor |  Conversation
+[singlev_layers10-11_lr1e-1 | L11 | normed | H_norm=0.959 top1=0.001]  Dimensions |  (:: |  dimensions |  reorder | 一次 | 自己 | Broad |  recorded | 许 | 玩具 | 顿 | ional |  Guill |  sluggish | aton
+[singlev_layers10-20_lr1e-1 | L10 | normed | H_norm=0.955 top1=0.000] ether | 虚 | 重中 | atinum |  progress | akah |  dmg |  remote | orris | 动 |  lighter |  inscription | 第三季度 | -disc | aaaaaaaa
+[singlev_layers10-20_lr1e-1 | L11 | normed | H_norm=0.957 top1=0.000] 驴 |  hy | -NLS | oning | inth | cene |  discontinued |  Guill |  endlessly |  Essen | plemented | /Area |  Day |  humming |  Lyrics
+[singlev_layers10-20_lr1e-1 | L12 | normed | H_norm=0.960 top1=0.000] 退 | Seen | amp | 好不好 |  Sloven |  turn | lep | 不可 |  Oct | ighb | WS |  unw | 常 |  Claus | elong
+[singlev_layers10-20_lr1e-1 | L13 | normed | H_norm=0.960 top1=0.000]  harmless |  Little | icolon |  emot | 牌 | Little |  Rel | 欢 |  typ | aq | 向记者 |  Concat | plementary |  Guil |  narrowly
+[singlev_layers10-20_lr1e-1 | L14 | normed | H_norm=0.963 top1=0.000] kur | 载 |  priesthood |  retro |  grat |  resisting | og | ल | atte |  Extreme |  EMS | refix | 为准 | 写着 |  hart
+[singlev_layers10-20_lr1e-1 | L15 | normed | H_norm=0.961 top1=0.000]  Nigerian |  earm | arser | 定点 |  hann |  disables | /non | 另 |  starter | _required |  speeding | 速 | sonian |  sulf | eration
+[singlev_layers10-20_lr1e-1 | L16 | normed | H_norm=0.960 top1=0.002]  plum |  Equal |  couch |  vex |  TIMES | 订阅 |  downturn |  unc |  CET | 不出 | aque |  slang |  portrayed | -turn |  ADA
+[singlev_layers10-20_lr1e-1 | L17 | normed | H_norm=0.960 top1=0.001]  Brow |  pans |  Bringing | ning | Plus | _cancel |  invitation |  Scan | wan | �示 |  obstruction | Mex |  purse |  engage |  phenomenon
+[singlev_layers10-20_lr1e-1 | L18 | normed | H_norm=0.960 top1=0.001] ki | 多少钱 | 多余 |  Gather | 凹 |  gather |  Iraqi |  Kiss |  spel |  mét |  Beard | 堪 | 为空 |  spi | 的意思
+[singlev_layers10-20_lr1e-1 | L19 | normed | H_norm=0.960 top1=0.000] vas | /array | enaire | Rating |  whatsoever |  Nass | plans | -found | /domain | berries | umni |  navigating | roscope |  invoice | qu
+[singlev_layers10-20_lr1e-1 | L20 | normed | H_norm=0.959 top1=0.000] quan | .${ |  spont | IBUTE | -parts | -books | quia | LG | -framework |  ОО | ]." | 出身 | 恫 | 全部 | rott
+[singlev_layers10-20_lr3e-1 | L10 | normed | H_norm=0.957 top1=0.001] -town | -photo | .''\n\n |  foresee |  fors | plat |  gains | [:,: | ∎ |  dashes | 一秒 | ^K | -pad | Inspector | owing
+[singlev_layers10-20_lr3e-1 | L11 | normed | H_norm=0.957 top1=0.001] owing | ={({ |  Hus | itory |  ${({ | ?): | -pad |  casc |  '.. |  Katz | sembled | illis | prech | Cc | -spe
+[singlev_layers10-20_lr3e-1 | L12 | normed | H_norm=0.957 top1=0.001] !-- | zug |  captivity | :? | :Add |  ${({ |  Tablets | ."\ | prs | -users | ∎ | ‽ | eating | 岁以下 | estr
+[singlev_layers10-20_lr3e-1 | L13 | normed | H_norm=0.956 top1=0.001] !-- | weg |  Muse | uter |  ${({ |  Hus | ieg | owing |  thereof | pathname | _Construct | erte | /control | lette | 'use
+[singlev_layers10-20_lr3e-1 | L14 | normed | H_norm=0.957 top1=0.001] INC | _Construct | oku |  outline |  /[ |  Muse | :? | /Private |  Catalonia | /z | liner | ilter |  pip | #w |  neckline
+[singlev_layers10-20_lr3e-1 | L15 | normed | H_norm=0.960 top1=0.001]  pip | alc |  /[ |  });\n\n |  bytecode |  shorts |  IMM | ,/ |  Dud |  ordered |  renewal |  transports |  Oliv | .parts | 一致
+[singlev_layers10-20_lr3e-1 | L16 | normed | H_norm=0.960 top1=0.000]  shorts |  renewal |  Cincinnati |  retiring |  Tablets | 正好 | alc |  renewed | 新规 | marine |  trav | Ret |  uphill |  IMM |  Ops
+[singlev_layers10-20_lr3e-1 | L17 | normed | H_norm=0.960 top1=0.000] alc | -mar |  renewal |  METH | bau | KEEP |  sustaining |  poke |  acad |  bots |  Execute | acci | trä | arges |  gracious
+[singlev_layers10-20_lr3e-1 | L18 | normed | H_norm=0.959 top1=0.001] !-- |  plag |  &: | 我也 | -mar |  apr |  Anth | :'' |  iov |  Fresh | cased |  ordered |  horns | 新规 | @d
+[singlev_layers10-20_lr3e-1 | L19 | normed | H_norm=0.959 top1=0.001]  answer | answer | ṡ | edar |  answering | cased |  answers | 回答 | _answer |  semiclass |  apr |  BLL |  iov | pherd |  plag
+[singlev_layers10-20_lr3e-1 | L20 | normed | H_norm=0.955 top1=0.003]  answer | :'' | -answer | cased | edar | bidden | (answer |  Thus | 的答案 | 回答 | 答案 | _answer |  Answer | &m |  answers
+[singlev_layers10-20_lr5e-3 | L10 | normed | H_norm=0.964 top1=0.000] ace | ŭ | 书写 |  Tweet |  simplistic |  Sylv | -ft | Help | Pack | IMER |  asn |  Guill |  Improvement | ynchronously | ******\n\n
+[singlev_layers10-20_lr5e-3 | L11 | normed | H_norm=0.962 top1=0.000] -kit | 也可能 | ynchronously |  Doch | -ft | .parts | ecute | ধ | yne |  <$ | 沤 |  Stewart | 息 |  grinned | fst
+[singlev_layers10-20_lr5e-3 | L12 | normed | H_norm=0.963 top1=0.000] -mm | -ft | 骨骼 |  warmed | fine |  Tits |  retarded | 不尽 | .RegularExpressions |  Stack |  Gab | 授 |  peculiar | 房子 | 王先生
+[singlev_layers10-20_lr5e-3 | L13 | normed | H_norm=0.962 top1=0.001]  Tits | .parts |  Latvia |  adequ | 也可能 | -ft |  � | scss |  warmed |  *@ | /rec |  Kund | 授 | � | aky
+[singlev_layers10-20_lr5e-3 | L14 | normed | H_norm=0.962 top1=0.000] � |  � | -ft |  *@ |  abl |  mythology |  Guill |  patriot | 'aff | .parts | .cgi | /+ |  marg |  occup |  lodging
+[singlev_layers10-20_lr5e-3 | L15 | normed | H_norm=0.962 top1=0.000]  speeding | 输 |  skiing | 次要 | 这个词 |  Oliv | CS |  collaborating |  follower | rita | ati | 限额 |  Sell | 一律 |  Kad
+[singlev_layers10-20_lr5e-3 | L16 | normed | H_norm=0.961 top1=0.000]  lodging | 输 |  Latvia |  occup |  Sell |  tweeting |  Seven |  participation |  deem | � |  reim |  asn | 合唱 | 无所谓 | 值得一
+[singlev_layers10-20_lr5e-3 | L17 | normed | H_norm=0.961 top1=0.000]  instruct |  Diễn |  Professionals |  אש | 彼 |  Checklist |  Pais |  Tells |  scand |  Automation | 丰收 | ipur | 我不想 | 对此 | Directions
+[singlev_layers10-20_lr5e-3 | L18 | normed | H_norm=0.961 top1=0.000] 不可以 | izia |  Growing | iaux |  say |  Related | tran | we |  stern | 不得 | 責任 | ikal |  frag | rown |  sticks
+[singlev_layers10-20_lr5e-3 | L19 | normed | H_norm=0.964 top1=0.000]  adher |  Ryu |  comply |  constrained | 遵守 |  dine | 冷水 |  constraints |  deselect | submitted |  requested |  dawn | Datos | ogene | ối
+[singlev_layers10-20_lr5e-3 | L20 | normed | H_norm=0.962 top1=0.000] Calendar |  answer | must |  enf | 不了 |  stressed |  constraints |  Requirements | 众 |  nach | _answer | 须 |  constrained |  innovate |  comply
+[singlev_layers16-17_lr1e-1 | L16 | normed | H_norm=0.961 top1=0.001] sembled | 捧 | РЕ |  dum |  tun |  pat | -eng | 还有一个 | atum | 模仿 |  LSM |  precip | 嫌弃 | 之意 | 之一
+[singlev_layers16-17_lr1e-1 | L17 | normed | H_norm=0.961 top1=0.001]  deepest |  cathedral |  Wig | days |  Stam |  tobacco | Contained | ups | 冤 | andas |  inexperienced |  pathlib |  wholes | Operations | esteem
+[singlev_layers20-21_lr1e-1 | L20 | normed | H_norm=0.952 top1=0.001] 三点 |  stre |  contributions |  Uniform |  trapping | 如下 | puted |  Fran |  Fonts |  interf | ousand |  goals | uteur | 为此 | underscore
+[singlev_layers20-21_lr1e-1 | L21 | normed | H_norm=0.959 top1=0.001] etration |  orn | *size | -xl | 封面 | charm | OE | 全体 | 印刷 | =~ | bö |  inaugur | ]=$ | ',$ | 峰值
+[singlev_layers20-27_lr1e-1 | L20 | normed | H_norm=0.954 top1=0.001] 三点 |  Fran | ousand |  Uniform |  LAB |  contributions | 为此 |  traction |  classified |  flask |  Related | 过程 | olla |  trapping | 一个星期
+[singlev_layers20-27_lr1e-1 | L21 | normed | H_norm=0.956 top1=0.001]  catches |  eyeb |  ect | 封面 |  timestep |  interpol | Neg | asd |  Got |  quer | neg |  mex | terms |  caught |  IPC
+[singlev_layers20-27_lr1e-1 | L22 | normed | H_norm=0.956 top1=0.001]  fame |  Hur |  sever | ANA | ::< |  Hipp |  Scandinavian | stores | 简称 | ” | fixtures | 关注 | keletal |  concrete | $time
+[singlev_layers20-27_lr1e-1 | L23 | normed | H_norm=0.959 top1=0.000] 楼下 | [` | 挚 | -split | -original | spl | llib | OUNT |  unfinished | 不得不 | PAR | |# | ’y | =?, | bone
+[singlev_layers20-27_lr1e-1 | L24 | normed | H_norm=0.959 top1=0.000] 图标 |  mute | -location |  alert | 一律 |  verge |  personalized | scrição |  sanitary | ╮ |  Rated |  bats | udas | :name | [..
+[singlev_layers20-27_lr1e-1 | L25 | normed | H_norm=0.958 top1=0.001]  \% |  __( | orer | %%%%%%%% | 来看看吧 |  $($ |  Georgian | 任何一个 |  Hv | ⟹ |  god | -vertical |  crit | 古今 |  inconsistent
+[singlev_layers20-27_lr1e-1 | L26 | normed | H_norm=0.958 top1=0.001] ären | ncia | Ranked | FLASH |  Dio | LOOD | -fin | efore | -basic | visor |  outbreak | FTER | SEO |  oversees | CCCC
+[singlev_layers20-27_lr1e-1 | L27 | normed | H_norm=0.938 top1=0.005]  must |  MUST | <｜end▁of▁sentence｜> |  The |  need |  center |  ending |  words | —if |  answer |  needs | must |  instructions | 须 |  instruction
+[singlev_layers3-4_lr1e-1 | L3 | normed | H_norm=0.925 top1=0.001] ic | 物 | omin |  As |  direct |  exact |  (!( | oh |   |  Cort |  Val |  Al |  Blue |  A |  P
+[singlev_layers3-4_lr1e-1 | L4 | normed | H_norm=0.952 top1=0.000]  majority | 相近 |  sco | aires | -changing |  bol |  dame |  scoop | endum |  wal | 分开 |  sidebar |  familiarity | -purpose |  ({\n

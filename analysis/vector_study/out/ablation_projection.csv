@@ -1,0 +1,3 @@
+layer,vec_norm,wU_frac,refl_none,refl_full,refl_ablated,trans_full,trans_ablated,effect_full,effect_ablated,retain_ratio
+3,2.535,0.098,0.0,0.0,0.0,6.85,0.0,0.0,0.0,nan
+30,3.312,0.109,0.0,0.0,0.0,0.0,0.0,0.0,0.0,nan

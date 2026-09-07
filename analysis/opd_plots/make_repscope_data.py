@@ -19,14 +19,57 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from matplotlib.ticker import MaxNLocator
+
+from panel_style import (CURVE_RAW_ALPHA, CURVE_RAW_LW, CURVE_SMOOTH_LW,
+                         FS_LEGEND, FS_LEGEND_SMALL, PANEL_FIGSIZE,
+                         curve_panel_rc, save_panel, style_curve_axes)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "data_math500-repscope.json")
 FIG = os.path.join(HERE, "fig", "opd_math500-repscope_ema0.2.svg")
 EMA_ALPHA = 0.2
 
-# same figure style as make_fig2_offpolicy.py (identical size & fonts)
+# Encoding: COLOR = teacher, LINE STYLE = data source. Six one-off colours with
+# "On-policy + Off-distribution Teacher"-style labels needed 134 pt per legend
+# entry, i.e. 309 pt for two columns inside a 229 pt axes. Factoring the 2x3
+# design into two short legends is what makes it fit -- and it also makes the
+# comparison the figure is about (same teacher, on- vs off-policy) a matter of
+# following one colour instead of matching two arbitrary hues.
+#
+# LEGEND WORDING -- the old labels were "RL" / "SFT" / "Off-distribution", which
+# measured two DIFFERENT things: "SFT" names a training objective while
+# "Off-distribution" names a distributional distance, so a reader could not tell
+# what the comparison varies. Both non-RL conditions are in fact the same kind of
+# supervision (fixed traces from another model's corpus); what changes is WHO
+# generated the traces and how far that model sits from the student:
+#
+#   old label           corpus                       generator     distance
+#   RL                  the student's own rollouts   (self)        zero
+#   SFT                 Math-CoT-44K                 Qwen3-8B      near: same family
+#   Off-distribution    OpenMathReasoning            QwQ-32B       far: different family
+#
+# So the keys keep their short internal names (they index CONFIG and COLORS) but
+# the legend now shows the generator plus a near/far tag, i.e. one monotone axis
+# the reader can order. The prose must state the corpora; a legend cannot carry
+# "44K queries x 32 samples = 1.4M traces" vs "540K problems, 3.2M solutions".
+TEACHER_COLOR = {
+    "RL": "#2ca02c",                 # green
+    "SFT": "#ff7f0e",                # orange
+    "Off-distribution": "#d62728",   # red
+}
+
+# Legend text per teacher. Measured at FS_LEGEND_SMALL: the widest is 59.9 pt,
+# +18 pt for the handle = 78 pt, so a single column fits the 229 pt axes.
+TEACHER_LABEL = {
+    "RL": "own RL rollouts",
+    "SFT": "Qwen3-8B (near)",
+    "Off-distribution": "QwQ-32B (far)",
+}
+SOURCE_LS = {"On-policy": "-", "Off-policy": (0, (5.0, 2.4))}
+
+# Kept so plot_opd_score_curves.py still colours this dataset if plotted there.
 COLORS = {
     "On-policy + RL Teacher":               "#2ca02c",  # green
     "On-policy + SFT Teacher":              "#ff7f0e",  # orange
@@ -36,12 +79,23 @@ COLORS = {
     "Off-policy + Off-distribution Teacher":"#8c564b",  # brown
 }
 
+
+def _split_label(label):
+    """'On-policy + RL Teacher' -> ('On-policy', 'RL')."""
+    src, teacher = label.split(" + ")
+    return src, teacher.replace(" Teacher", "")
+
 # ----------------------------------------------------------------------------
 # Global knobs
 # ----------------------------------------------------------------------------
 START = 0.65          # all curves start here
 END = 150             # number of training steps (x-axis 1..END)
-TITLE = "Performance of Different Data Sources & Teacher Shifts on MATH500"
+# Terse, like the other panel titles: the old wording ran 326 pt against a
+# 353 pt canvas whose plot area is only 229 pt, so the title was visibly wider
+# than the axes it labelled. What the figure varies now reads off the legend.
+# "Trace Source", matching the legend: "Teacher Shift" implied a shifting teacher
+# when what varies is which model produced the traces. 173 pt of the 229 pt axes.
+TITLE = "Trace Source × Sampling · MATH500"
 TEACHER_SCORE = None  # set a float to draw a horizontal teacher dashed line, or None
 VAL_METRIC = "accuracy"
 
@@ -129,28 +183,44 @@ def main():
         h = hex_color.lstrip("#"); r, g, b = (int(h[i:i+2], 16) for i in (0, 2, 4))
         return f"#{int(r+(255-r)*amt):02x}{int(g+(255-g)*amt):02x}{int(b+(255-b)*amt):02x}"
 
-    plt.rcParams.update({"font.size": 18, "font.family": "DejaVu Sans", "axes.grid": True,
-                         "grid.color": "#dddddd", "grid.linewidth": 0.8,
-                         "xtick.labelsize": 13, "ytick.labelsize": 13,
-                         "figure.dpi": 600, "savefig.dpi": 600})
-    fig, ax = plt.subplots(figsize=(7, 5.5))
+    # Canvas and fonts come from panel_style so this figure matches the other
+    # score-curve panels.
+    curve_panel_rc()
+    fig, ax = plt.subplots(figsize=PANEL_FIGSIZE)
     for label, series in data.items():
         sc = np.asarray(series["scores"], float)
-        c = COLORS.get(label, "#333333")
-        ax.plot(st, sc, color=_lighten(c, 0.5), lw=1.0, alpha=0.22, zorder=2)
-        ax.plot(st, _ema(sc, EMA_ALPHA), color=c, lw=2.3, zorder=3, label=label)
-    ax.set_xlabel("Training step", fontsize=17, labelpad=8)
-    ax.set_ylabel("Accuracy", fontsize=17, labelpad=8)
-    ax.set_title(TITLE, fontsize=16, pad=12)
+        src, teacher = _split_label(label)
+        c = TEACHER_COLOR[teacher]
+        ls = SOURCE_LS[src]
+        ax.plot(st, sc, color=_lighten(c, 0.5), lw=CURVE_RAW_LW, alpha=CURVE_RAW_ALPHA,
+                ls=ls, zorder=2)
+        ax.plot(st, _ema(sc, EMA_ALPHA), color=c, lw=CURVE_SMOOTH_LW, ls=ls, zorder=3)
+    style_curve_axes(ax, TITLE)
     ax.xaxis.set_major_locator(MaxNLocator(nbins=8, integer=True))
     ax.margins(x=0); ax.set_xlim(st.min(), st.max()); ax.set_ylim(0, 0.92)
-    ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-    ax.legend(loc="lower right", fontsize=8, ncol=2, framealpha=0.9, edgecolor="#cccccc",
-              handlelength=1.6, handletextpad=0.4, labelspacing=0.3, columnspacing=0.9)
-    fig.tight_layout()
-    os.makedirs(os.path.dirname(FIG), exist_ok=True)
-    fig.savefig(FIG, bbox_inches="tight", format="svg", dpi=600)
-    print(f"[ok] saved: {FIG}")
+
+    # Two short legends beat six long ones: see the TEACHER_COLOR comment.
+    style_handles = [Line2D([0], [0], color="#555", lw=CURVE_SMOOTH_LW, ls=ls, label=src)
+                     for src, ls in SOURCE_LS.items()]
+    # "{t} teacher" would print "Off-distribution teacher", which is the wording
+    # this figure is trying to get away from; see the TEACHER_LABEL comment.
+    color_handles = [Line2D([0], [0], color=c, lw=CURVE_SMOOTH_LW,
+                            label=TEACHER_LABEL[t])
+                     for t, c in TEACHER_COLOR.items()]
+    # Placement: the RL pair saturates at 0.85 and everything else decays below
+    # 0.3, so the free space is the middle-right band and the strip just under
+    # the RL curves. Both lower corners are occupied by the decaying curves.
+    leg1 = ax.legend(handles=style_handles, loc="center right", fontsize=FS_LEGEND,
+                     framealpha=0.95, edgecolor="#dddddd", handlelength=2.7,
+                     handletextpad=0.35, labelspacing=0.25, borderpad=0.4)
+    ax.add_artist(leg1)
+    # Titled "Trace source", because that IS the varied axis: all three rows learn
+    # from traces, and only the generator (hence the distance) differs.
+    ax.legend(handles=color_handles, loc="upper right", bbox_to_anchor=(1.0, 0.90),
+              title="Trace source", title_fontsize=FS_LEGEND_SMALL,
+              fontsize=FS_LEGEND_SMALL, framealpha=0.95, edgecolor="#dddddd",
+              handlelength=1.2, handletextpad=0.35, labelspacing=0.2, borderpad=0.4)
+    save_panel(fig, FIG)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,1051 @@
+% =============================================================================
+%  A Theory of Low-Dimensional RLVR Steering  —  standalone appendix
+%  Compile:  pdflatex theory_single_vector_steering.tex   (twice for refs)
+%  Self-contained. To drop into an ICLR paper, copy everything between
+%  %%% BEGIN BODY  and  %%% END BODY  into your appendix, and move the
+%  \newtheorem / \DeclareMathOperator lines to your preamble.
+%
+%  Structure: three parts.
+%    Part I   — Single-vector steering (why one vector suffices).
+%    Part II  — Multi-vector steering  (what the residual subspace looks like).
+%    Part III — Why the proposed method (Alpha-Stabler) works.
+% =============================================================================
+\documentclass[11pt]{article}
+
+% ---- page geometry: generous margins so nothing runs into the edge --------
+\usepackage[a4paper,margin=1in]{geometry}
+
+% ---- math ------------------------------------------------------------------
+\usepackage{amsmath,amssymb,amsthm,bm}
+\usepackage{mathtools}          % \DeclarePairedDelimiter, split, etc.
+\allowdisplaybreaks             % let long display blocks break across pages
+
+% ---- tables & typography ---------------------------------------------------
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{microtype}          % subtle spacing; helps avoid overfull lines
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+% ---- theorem environments --------------------------------------------------
+\newtheorem{assumption}{Assumption}[section]
+\newtheorem{definition}{Definition}[section]
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}{Corollary}[section]
+\newtheorem{remark}{Remark}[section]
+
+% ---- operators & shorthands ------------------------------------------------
+\DeclareMathOperator{\KL}{KL}
+\DeclareMathOperator{\SNR}{SNR}
+\DeclareMathOperator{\CV}{CV}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\softmax}{softmax}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\bh}{\mathbf{h}}
+\newcommand{\bz}{\mathbf{z}}
+\newcommand{\bt}{\mathbf{t}}
+\newcommand{\bs}{\mathbf{s}}
+\newcommand{\bu}{\mathbf{u}}
+\newcommand{\bv}{\mathbf{v}}
+\newcommand{\bw}{\mathbf{w}}
+\newcommand{\br}{\mathbf{r}}
+\newcommand{\bp}{\mathbf{p}}
+\newcommand{\bq}{\mathbf{q}}
+\newcommand{\bc}{\mathbf{c}}
+\newcommand{\bI}{\mathbf{I}}
+\newcommand{\bdelta}{\bm{\delta}}
+\newcommand{\bDelta}{\bm{\Delta}}
+\newcommand{\bmu}{\bm{\mu}}
+\newcommand{\bxi}{\bm{\xi}}
+\newcommand{\Dh}{\bDelta_{\bh}}      % first-order activation shift from a weight update
+\newcommand{\Dhat}{\widehat{\bDelta}} % empirical (batch-mean) activation shift during training
+\newcommand{\PW}{P_W}                 % projector onto the weight principals
+\newcommand{\Gnorm}[1]{\lVert #1\rVert_G}
+
+\title{\bfseries A Theory of Low-Dimensional RLVR Steering}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-3em}
+
+%%% BEGIN BODY %%%
+\begin{abstract}
+\noindent
+We give a self-contained theory of why reinforcement learning with verifiable rewards (RLVR) admits
+an extremely low-dimensional description in activation space. The account is organized in three
+parts that build on one another. \textbf{Part~I} explains why a \emph{single}
+context-invariant steering vector recovers most of the RLVR distillation gain: distillation reduces to
+a weighted least-squares fit in a Fisher metric (\S\ref{sec:reduction}), the RLVR teacher shift is a
+low-entropy reward tilt (\S\ref{sec:tilt}), and the recovery ratio is therefore governed by a
+signal-to-fluctuation ratio, equivalently a three-constant lower bound (\S\ref{sec:recovery}).
+\textbf{Part~II} asks what remains after the first direction: sequentially learned
+orthogonal vectors perform a deflation of the same operator (\S\ref{sec:multi}), and the effective
+directions provably avoid the high-variance principal subspace, living in its low-variance
+complement (\S\ref{sec:complement}). \textbf{Part~III} turns the diagnosis into a
+method: the geometric quantity that controls recovery, principal-subspace intrusion, is a predictive
+health signal, and clipping it stabilizes training while preserving the effective update
+(\S\ref{sec:predicter}); \S\ref{sec:validity} delimits the regime of validity and
+\S\ref{sec:summary} summarizes. Two identities recur throughout,
+\begin{equation*}
+\rho=\frac{\SNR}{1+\SNR}
+\qquad\text{and}\qquad
+\rho\ \ge\ \frac{\kappa}{(1+\eta)(1+\varepsilon)},
+\end{equation*}
+where $\varepsilon$ measures principal-subspace intrusion, $\eta$ the residual complexity of the
+complement, and $\kappa$ the cross-sample consistency of the update; each maps to a distinct
+experiment.
+\end{abstract}
+
+% ===========================================================================
+\section*{Informal preview}
+% ===========================================================================
+Before the formal development, we state the intuition in one paragraph, so the assumptions below
+can be read as \emph{sufficient conditions for a picture we already understand} rather than as a
+list to be accepted on faith. Distilling an RLVR teacher into a frozen student amounts to fitting a
+correction to the student's hidden states; to second order, this is a weighted least-squares problem
+whose target is the per-context ``teacher shift'' $\bDelta(x)$ (Proposition~\ref{prop:wls}). The one
+fact that makes RLVR special is that a \emph{verifiable} reward tilts the base policy along a single
+shared direction (Lemma~\ref{lem:tilt}), so the cloud $\{\bDelta(x)\}$ is a thin needle. A single
+constant vector---the mean of that needle---therefore already captures most of it, and the fraction
+it captures is exactly a signal-to-fluctuation ratio (Theorem~\ref{thm:snr}). Everything else in the
+paper measures \emph{how thin the needle is}, decomposed into three quantities that we can read off
+independently:
+\begin{table}[h]
+\centering\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{@{}clXl@{}}
+\toprule
+\textbf{Const.} & \textbf{Name} & \textbf{Meaning (small is good)} & \textbf{Measured by} \\
+\midrule
+$\varepsilon$ & principal intrusion & fraction of the update energy that leaks into the
+high-variance activation principal subspace & PSI signal; principal-subspace ablation \\
+$\eta$ & complement residual & how multi-directional / context-dependent the shift is once the shared
+mode is removed & per-vector decay; high-layer / gating study \\
+$\kappa$ & cross-sample consistency & whether per-example corrections point the same way
+($\kappa=1/(1+\CV(a)^2)$) & teacher-type study \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\noindent
+The recovery ratio obeys $\rho\ge\kappa/((1+\eta)(1+\varepsilon))$ (Theorem~\ref{thm:bound}): one
+vector suffices exactly when the update is off-principal ($\varepsilon$ small), the complement is
+nearly one-dimensional ($\eta$ small), and corrections are co-signed ($\kappa\to1$). The reader who
+keeps this table in mind can treat the rest of the appendix as filling in \emph{why} each condition
+holds for RLVR and \emph{what happens} when one of them fails.
+
+% ###########################################################################
+\subsection*{Part I.\quad Single-Vector Steering: Why One Direction Suffices}
+% ###########################################################################
+\noindent\emph{This part establishes the headline fact. We first fix notation and the local regime
+(\S\ref{sec:setup}), then reduce distillation to a weighted least-squares problem in a Fisher metric
+(\S\ref{sec:reduction}), identify the special structure of the RLVR teacher that makes the problem
+compressible (\S\ref{sec:tilt}), and finally prove that a single vector recovers a fraction of the
+gain equal to a signal-to-fluctuation ratio, with an explicit three-constant lower bound
+(\S\ref{sec:recovery}).}
+
+% ===========================================================================
+\section{Setup and notation}\label{sec:setup}
+% ===========================================================================
+We consider a frozen pretrained language model with decoder layers $\{f_\ell\}_{\ell=1}^{L}$,
+hidden width $d$, vocabulary size $V$, and (tied or untied) unembedding matrix $U\in\R^{V\times d}$.
+A \emph{context} $x\sim\mathcal D$ denotes a token position together with its prefix, drawn from the
+distillation data distribution $\mathcal D$. For the base model we write
+\begin{equation*}
+\bh_\ell(x)\in\R^{d}\ \text{(layer-$\ell$ hidden state)},\qquad
+\bz_0(x)=U\,\bh_L(x)\in\R^{V}\ \text{(logits)},
+\end{equation*}
+and $p_0(\cdot\mid x)=\softmax(\bz_0(x))$ is the base next-token distribution. The teacher
+(RLVR-trained) induces logits $\bz_T(x)$ and distribution $p_T(\cdot\mid x)$. \emph{Vector steering}
+adds a trainable, context-invariant vector $\bdelta_\ell\in\R^{d}$ to the output of each layer $\ell$
+in a controlled set $\mathcal S\subseteq\{1,\dots,L\}$, i.e. $\bh_\ell(x)\mapsto\bh_\ell(x)+\bdelta_\ell$,
+with all backbone weights frozen. For clarity we develop the single-site case at layer $\ell$ and
+record the general case in Remark~\ref{rem:sites}. We use $\|v\|_A^2:=v^\top A v$ for a PSD matrix
+$A$, and $\lambda_i(\cdot),\sigma_i(\cdot)$ for the $i$-th largest eigen/singular value. The
+distillation objective is the expected forward KL to the teacher,
+\begin{equation}\label{eq:obj}
+\mathcal L(\bdelta)\;=\;\E_{x\sim\mathcal D}\,
+\KL\!\big(p_T(\cdot\mid x)\,\big\|\,p_{\bdelta}(\cdot\mid x)\big).
+\end{equation}
+
+\paragraph{Notational convention: context-dependent vs.\ context-invariant.}
+Because the entire argument is about \emph{which} quantities depend on the context $x$ and which do
+not, we fix one convention and follow it without exception.
+
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+\item \textbf{An explicit argument means context-dependence.} Every quantity that varies with the
+context carries $(x)$ \emph{at every occurrence}: $\bh_\ell(x)$, $\bz_T(x)$, $\bt(x)$, $\bDelta(x)$,
+$a(x)$, $\bxi(x)$, $J_x$, $F_x$, $G_x$ (for $J,F,G$ the dependence is written as a subscript, purely
+to keep formulas readable). We never abbreviate $a(x)$ to $a$ or $\bDelta(x)$ to $\bDelta$ inside a
+formula.
+\item \textbf{No argument means context-invariant.} Symbols without $(x)$ are fixed objects, the
+same for all contexts: the trainable vectors $\bdelta_\ell$ and $\bv_\ell^{(k)}$, the shared
+directions $\bs$ and $\bw$, the averaged metric $G$, the mean shift $\bmu$, the projectors $P,Q$,
+and the constants $\varepsilon,\eta,\kappa,\rho$.
+\item \textbf{Symbols name values, not functions.} Whenever a map is needed as an object in its own
+right we give it a distinct name and state its domain explicitly (e.g.\ the activation function
+$\phi:\R\to\R$ and its derivative $\phi'$ in Lemma~\ref{lem:bridge}); the letters $\bh,\bz,\bDelta$
+always denote the \emph{value} at the stated context.
+\end{itemize}
+
+\noindent
+The one substantive point of the theory can now be stated in this notation in a single line: the
+trainable object $\bdelta_\ell$ carries no $(x)$, while its target $\bDelta(x)$ does, so
+single-vector steering succeeds exactly to the extent that the $x$-dependence of $\bDelta(x)$ is
+weak.
+
+\paragraph{Symbol table.} Table~\ref{tab:notation} collects the recurring symbols.
+\begin{table}[h]
+\centering\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\textbf{Symbol} & \textbf{Type} & \textbf{Meaning} \\
+\midrule
+$x\sim\mathcal D$ & context & token position with its prefix \\
+$\bh_\ell(x)\in\R^d$ & ctx.-dep. & layer-$\ell$ hidden state (value at $x$) \\
+$\bz_0(x),\bz_T(x)\in\R^V$ & ctx.-dep. & base / teacher logits \\
+$\bt(x)=\bz_T(x)-\bz_0(x)\in\R^V$ & ctx.-dep. & teacher logit shift \\
+$F_x\in\R^{V\times V}$ & ctx.-dep. & Fisher information at the teacher logits, \eqref{eq:fisher} \\
+$J_x\in\R^{V\times d}$ & ctx.-dep. & Jacobian $\partial\bz(x)/\partial\bh_\ell(x)$ \\
+$G_x=J_x^\top F_xJ_x\in\R^{d\times d}$ & ctx.-dep. & pullback (output-sensitivity) metric, Def.~\ref{def:metric} \\
+$\bDelta(x)\in\R^d$ & ctx.-dep. & target representation shift, Def.~\ref{def:metric} \\
+$a(x)\in\R_{\ge0}$ & ctx.-dep. & strength of the shared direction at $x$ \\
+$\bxi(x)\in\R^d$ & ctx.-dep. & residual of $\bDelta(x)$ off the shared direction \\
+\midrule
+$\bdelta_\ell\in\R^d$ & invariant & trainable steering vector (the object we fit) \\
+$\bv_\ell^{(k)}\in\R^d$ & invariant & $k$-th sequentially trained orthogonal vector \\
+$\bs\in\R^V$, $\bw\in\R^d$ & invariant & shared logit / representation direction \\
+$G=\E_x[G_x]$ & invariant & averaged metric (Assumption~\ref{as:homog}) \\
+$\bmu=\E_x[\bDelta(x)]\in\R^d$ & invariant & mean target shift; optimal $\bdelta$ \\
+$C\in\R^{d\times d}$, $P$, $Q=\bI-P$ & invariant & activation covariance and its principal / complement projectors \\
+$\varepsilon,\eta,\kappa,\rho$ & invariant & intrusion, residual complexity, consistency, recovery \\
+\bottomrule
+\end{tabularx}
+\caption{Recurring symbols. Context-dependent quantities always appear with $(x)$ (or an $x$
+subscript); context-invariant ones never do.}
+\label{tab:notation}
+\end{table}
+
+\paragraph{Assumptions.} We collect the five assumptions here for reference; each is motivated where
+first used. Assumptions~\ref{as:local}--\ref{as:homog} suffice for Part~I and
+Part~II; Assumptions~\ref{as:offprin}--\ref{as:shared} refine the analysis into
+measurable constants and support the explicit bound and the method in Part~III.
+
+\begin{assumption}[Local / trust-region regime]\label{as:local}
+Steering operates in a neighborhood of the base model in which the first-order expansion of the
+logits and the second-order (Fisher) expansion of the KL are both accurate. Concretely, write
+\begin{equation*}
+J_x:=\frac{\partial\bz(x)}{\partial\bh_\ell(x)}\in\R^{V\times d}
+\end{equation*}
+for the Jacobian of the logits with respect to the layer-$\ell$ hidden state at context $x$
+(i.e.\ the linearization of everything the frozen network does downstream of the injection site),
+and let $\bz_{\bdelta}(x)$ denote the logits of the steered model. We assume
+\begin{equation*}
+\bz_{\bdelta}(x)=\bz_0(x)+J_x\bdelta+o(\|\bdelta\|),
+\end{equation*}
+and that the third-order remainder of the KL expansion is $o(\|J_x\bdelta-\bt(x)\|^2)$, where
+$\bt(x):=\bz_T(x)-\bz_0(x)$ is the teacher logit shift (Lemma~\ref{lem:bregman}). This is the
+small-step region induced by the KL penalty of RLVR (see \S\ref{sec:complement}, mechanism~I).
+\end{assumption}
+
+\begin{assumption}[Low-entropy verifiable reward]\label{as:reward}
+The teacher logit shift $\bt(x):=\bz_T(x)-\bz_0(x)\in\R^{V}$ (how RLVR reweights the next-token
+logits relative to the base model at context $x$) decomposes into a shared rank-one component and a
+small residual,
+\begin{equation*}
+\bt(x)=\underbrace{a(x)\,\bs}_{\text{shared direction}}+\ \br_\perp(x),
+\qquad
+\E_x\|a(x)\,\bs\|_{F_x}^2\ \gg\ \E_x\|\br_\perp(x)\|_{F_x}^2 ,
+\end{equation*}
+where the fixed unit vector $\bs\in\R^{V}$ is the \emph{shared reasoning direction} (the common way
+RLVR reshapes the output distribution; it carries no $(x)$ because it is the same for every
+context); the scalar $a(x)\ge0$ is its \emph{per-context strength} (how strongly that direction is
+applied at $x$); and $\br_\perp(x)\in\R^{V}$ is the \emph{context-specific residual}, the part of
+the shift not explained by $\bs$ (hence ``$\perp$'': it is $F_x$-orthogonal to $\bs$, i.e.\
+$\bs^\top F_x\,\br_\perp(x)=0$ for every $x$). The inequality states that this residual carries far
+less energy---in the Fisher metric $F_x$ of \eqref{eq:fisher}, which weights logit directions by
+their effect on the output distribution---than the shared component.
+\end{assumption}
+
+\begin{assumption}[Metric homogeneity]\label{as:homog}
+The representational metric $G_x$ (Definition~\ref{def:metric}) is approximately
+context-independent: writing $\bar G:=\E_{x\sim\mathcal D}[G_x]$ for its average, we assume
+$G_x\approx\bar G$ for $\mathcal D$-typical $x$, and abbreviate $G:=\bar G$. We further assume $G$
+is positive definite on $\operatorname{span}\{\bDelta(x):x\in\mathcal D\}$, so that
+$\Gnorm{\cdot}$ is a genuine norm on the subspace where the analysis takes place.
+\end{assumption}
+
+\begin{assumption}[Off-principal localization]\label{as:offprin}
+Let $P$ be the orthogonal projector onto the top-$m$ principal subspace of the activation
+covariance $C$ (Definition~\ref{def:CG})---the $m$ directions of largest activation variance---and
+let $Q=\bI-P$ project onto the remaining low-variance \emph{complement}. Split each target shift as
+$\bDelta(x)=P\bDelta(x)+Q\bDelta(x)$ into its principal and complement parts. We assume (i) this
+split is orthogonal in the metric $G$, so energies add,
+\begin{equation*}
+\E_x\Gnorm{\bDelta(x)}^2\approx\E_x\Gnorm{P\bDelta(x)}^2+\E_x\Gnorm{Q\bDelta(x)}^2,
+\end{equation*}
+and (ii) the effective shift lives almost entirely in the complement. To make (ii) quantitative we
+\emph{define} the \emph{principal-subspace intrusion} as the exact energy ratio
+\begin{equation}\label{eq:eps}
+\varepsilon:=\frac{\E_x\Gnorm{P\bDelta(x)}^2}{\E_x\Gnorm{Q\bDelta(x)}^2}\ \in[0,\infty) ,
+\end{equation}
+and assume it is small, $\varepsilon\ll1$. Thus $\varepsilon$ is a \emph{derived quantity}, not a
+free bound: it is the fraction of update energy that falls in the high-variance principal subspace
+relative to the complement. Combining \eqref{eq:eps} with the additivity in (i) gives the form used
+later,
+\begin{equation}\label{eq:epsfrac}
+\frac{\E_x\Gnorm{P\bDelta(x)}^2}{\E_x\Gnorm{\bDelta(x)}^2}=\frac{\varepsilon}{1+\varepsilon} .
+\end{equation}
+\end{assumption}
+
+\begin{assumption}[Shared direction in the complement]\label{as:shared}
+Within the complement (the range of $Q$, i.e.\ the low-variance subspace of
+Assumption~\ref{as:offprin}), the target shifts share a single dominant direction. Formally, there
+is a unit vector $\bw$ in $\operatorname{range}(Q)$ (so $Q\bw=\bw$ and $\Gnorm{\bw}=1$) such that
+\begin{equation*}
+Q\bDelta(x)=\underbrace{a(x)\,\bw}_{\text{shared complement mode}}+\ \bxi(x)
+\quad\text{for every }x,
+\qquad a(x)\ge0,\quad \E_x[\bxi(x)]=\mathbf 0,\quad \E_x\!\big[\bxi(x)^\top G\,\bw\big]=0 ,
+\end{equation*}
+where $\bw\in\R^d$ is the \emph{shared complement direction} (the single direction every context's
+correction mostly points along, hence no $(x)$); $a(x)\ge0$ is the per-context strength---the same
+scalar as in Assumption~\ref{as:reward}, up to the fixed positive factor picked up when the logit
+direction $\bs$ is pulled back to representation space (\S\ref{sec:tilt}), which we absorb into the
+normalization of $\bw$; and $\bxi(x)\in\R^d$ is the \emph{per-context residual within the
+complement}---mean-zero and $G$-orthogonal to $\bw$ on average, so it captures the genuinely
+context-dependent, multi-directional part that no context-invariant vector can fit. From these we
+define two dimensionless constants,
+\begin{equation*}
+\kappa:=\frac{\big(\E_x[a(x)]\big)^2}{\E_x[a(x)^2]}\in(0,1],
+\qquad
+\eta:=\frac{\E_x\Gnorm{\bxi(x)}^2}{\E_x[a(x)^2]}\ \ge\ 0 ,
+\end{equation*}
+where $\kappa$ is the \emph{cross-sample consistency} (how co-directional the corrections are;
+$\kappa=1$ iff $a(x)$ is constant in $x$, and $\kappa=1/(1+\CV(a)^2)$ in general, with
+$\CV(a)^2=\Var_x(a(x))/(\E_x[a(x)])^2$), and $\eta$ is the \emph{relative residual complexity} of
+the complement (how much of it lies off the shared direction $\bw$). In the favorable regime the
+corrections are near-parallel and the residual is negligible: $\kappa\to1$ and $\eta\to0$.
+\end{assumption}
+
+\noindent
+Assumption~\ref{as:local} is the standard KL trust-region hypothesis;
+Assumption~\ref{as:reward} is the sole substantive modeling hypothesis, specific to verifiable
+rewards (derived in \S\ref{sec:tilt}). Assumptions~\ref{as:offprin}--\ref{as:shared} are the
+activation-space form of the off-principal geometry; they refine Assumption~\ref{as:reward} into
+three separately measurable constants ($\varepsilon,\eta,\kappa$).
+
+\begin{remark}[On the approximations, and graceful degradation]\label{rem:approx}
+The symbol $\approx$ appears in Assumptions~\ref{as:homog}--\ref{as:offprin} (metric homogeneity and
+the $G$-orthogonal split) and is not merely cosmetic; we therefore state how the conclusions degrade
+when it is loosened. \emph{(i) Homogeneity.} Dropping Assumption~\ref{as:homog} entirely, the
+optimum of Proposition~\ref{prop:opt} is still exact---it is the $\bar G$-weighted mean---and
+Theorem~\ref{thm:snr} holds verbatim with the ordinary mean and variance replaced by their
+$\bar G$-weighted counterparts; homogeneity is used \emph{only} to present the clean unweighted form.
+Quantitatively, if $\|\bar G^{-1/2}(G_x-\bar G)\bar G^{-1/2}\|\le\epsilon$, the recovery ratio
+changes by $O(\epsilon)$. \emph{(ii) Orthogonal split.} If the principal/complement split is
+$G$-orthogonal only up to a cross term of relative size $\gamma$, the bound
+\eqref{eq:bound} weakens to $\rho\ge\kappa/((1+\eta)(1+\varepsilon)(1+\gamma))$---the same form with
+one extra benign factor. In both cases the \emph{qualitative} conclusions (one dominant mode;
+off-principal localization) are unchanged, and the residual errors are exactly the quantities we
+report empirically (e.g.\ the $0.52\%$ top-8 PC energy directly bounds the intrusion term).
+\end{remark}
+
+% ===========================================================================
+\section{Distillation reduces to weighted least squares}\label{sec:reduction}
+% ===========================================================================
+Our first step is purely structural and holds for \emph{any} teacher: it turns the opaque KL
+objective \eqref{eq:obj} into a transparent quadratic fit in activation space, whose geometry the
+rest of Part~I exploits. The categorical family over the $V$ tokens is an exponential family with
+natural parameter $\bz\in\R^V$, log-partition $A(\bz)=\log\sum_{v=1}^{V} e^{z_v}$, and mean map
+$\nabla A(\bz)=\softmax(\bz)$. Its Hessian is the Fisher information: writing
+$p=\softmax(\bz)\in\R^V$ for the distribution at those logits,
+\begin{equation}\label{eq:fisher}
+F(\bz)=\nabla^2 A(\bz)=\diag(p)-p\,p^\top\ \succeq\ 0
+\qquad\text{(a fixed matrix once $\bz$ is fixed).}
+\end{equation}
+
+\begin{lemma}[KL is a Bregman divergence; local quadratic form]\label{lem:bregman}
+For any two logit vectors $\bz,\bz'\in\R^V$ we have
+$\KL(\softmax(\bz')\,\|\,\softmax(\bz))=D_A(\bz\,\|\,\bz')$, where $D_A$ is the Bregman divergence
+generated by $A$. Consequently, under Assumption~\ref{as:local}, and writing
+\begin{equation*}
+\bt(x):=\bz_T(x)-\bz_0(x)\in\R^V
+\qquad\text{and}\qquad
+F_x:=F\big(\bz_T(x)\big)\in\R^{V\times V}
+\end{equation*}
+for the teacher logit shift and the Fisher information evaluated at the teacher logits,
+\begin{equation}\label{eq:kl-quad}
+\KL\!\big(p_T(\cdot\mid x)\,\|\,p_{\bdelta}(\cdot\mid x)\big)
+=\tfrac12\big(J_x\bdelta-\bt(x)\big)^\top F_x\big(J_x\bdelta-\bt(x)\big)
+   +o\big(\|J_x\bdelta-\bt(x)\|^2\big).
+\end{equation}
+\end{lemma}
+\begin{proof}
+KL between two members of an exponential family equals the Bregman divergence of the log-partition
+at their natural parameters; substituting $A$ and $\nabla A=p$ gives the identity. Taylor-expanding
+$D_A$ in its first argument at $\bz_T(x)$ with $\nabla^2 A=F$, and using the first-order logit
+expansion of Assumption~\ref{as:local}, gives \eqref{eq:kl-quad}.
+\end{proof}
+
+\begin{definition}[Representational metric and target shift]\label{def:metric}
+For each context $x$ define the \emph{pullback Fisher metric} $G_x$ and the \emph{target
+representation shift} $\bDelta(x)$ by
+\begin{equation*}
+\begin{gathered}
+G_x:=J_x^\top F_x\,J_x\ \in\R^{d\times d},\\[2pt]
+\bDelta(x):=\argmin_{\bu\in\R^d}\ \|J_x\bu-\bt(x)\|_{F_x}^2
+\ =\ G_x^{-1}J_x^\top F_x\,\bt(x)\quad(\text{when }G_x\text{ is invertible}).
+\end{gathered}
+\end{equation*}
+In words: $G_x$ measures, in representation space, how strongly a hidden-state perturbation at $x$
+moves the output distribution, and $\bDelta(x)\in\R^d$ is the hidden-state offset that best
+reproduces the teacher's logit shift $\bt(x)$ at that same context. Note that $\bDelta(x)$ is a
+\emph{value} in $\R^d$ attached to $x$, not a trainable parameter: the parameter is the
+context-invariant $\bdelta$, and the whole analysis compares the two.
+\end{definition}
+
+\begin{proposition}[Distillation $\equiv$ weighted least squares]\label{prop:wls}
+Under Assumption~\ref{as:local}, up to an additive constant independent of $\bdelta$ and terms of
+order $o(1)$,
+\begin{equation}\label{eq:wls}
+\mathcal L(\bdelta)
+=\tfrac12\,\E_{x\sim\mathcal D}\big(\bdelta-\bDelta(x)\big)^\top G_x\big(\bdelta-\bDelta(x)\big)
+ +\mathrm{const}.
+\end{equation}
+\end{proposition}
+\begin{proof}
+By \eqref{eq:kl-quad}, $\KL=\tfrac12\|J_x\bdelta-\bt(x)\|_{F_x}^2$ up to the remainder. Decompose
+the teacher shift as $\bt(x)=J_x\bDelta(x)+\br_x$, where by Definition~\ref{def:metric} the residual
+$\br_x\in\R^V$ is $F_x$-orthogonal to the column space of $J_x$. The cross term therefore vanishes,
+so
+\begin{equation*}
+\|J_x\bdelta-\bt(x)\|_{F_x}^2
+=\big\|J_x\big(\bdelta-\bDelta(x)\big)\big\|_{F_x}^2+\br_x^\top F_x\br_x .
+\end{equation*}
+The first term equals $\|\bdelta-\bDelta(x)\|_{G_x}^2$ by the definition of $G_x$; the second does
+not involve $\bdelta$. Taking $\E_{x\sim\mathcal D}$ gives \eqref{eq:wls}.
+\end{proof}
+
+\begin{remark}[General injection sites]\label{rem:sites}
+For $\mathcal S$ multiple sites, stack $\bdelta$ and let $J_x$ be the Jacobian from all sites to the
+logits; \eqref{eq:wls} holds verbatim with $G_x=J_x^\top F_x J_x$. The single-site final-layer case
+is $J_x=U$.
+\end{remark}
+
+\noindent
+Proposition~\ref{prop:wls} recasts single-vector steering as \emph{fitting one constant vector to
+the input-indexed cloud of teacher shifts} $\{\bDelta(x)\}$ in the output-sensitivity metric $G$.
+Whether one constant fits well is thus entirely a question about the geometry of this cloud---and
+that geometry is decided by the teacher, which we characterize next.
+
+% ===========================================================================
+\section{The RLVR teacher shift is a low-entropy reward tilt}\label{sec:tilt}
+% ===========================================================================
+Proposition~\ref{prop:wls} holds for any teacher, so what makes RLVR \emph{compressible} is not the
+surrogate but the teacher's own structure. We show that the KL-regularized RL optimum is an
+exponential reward tilt, and that verifiable rewards make this tilt low-rank---turning the target
+cloud into a thin needle.
+
+\begin{lemma}[KL-regularized RL optimum is an exponential tilt]\label{lem:tilt}
+The objective
+$\max_{\pi}\ \E_{y\sim\pi(\cdot\mid x)}[r(x,y)]-\beta\,\KL(\pi(\cdot\mid x)\|p_0(\cdot\mid x))$
+is strictly concave and attains its unique maximum at
+\begin{equation}\label{eq:pistar}
+\pi^\star(y\mid x)=\frac{p_0(y\mid x)\,e^{r(x,y)/\beta}}{Z_\beta(x)},
+\qquad
+Z_\beta(x)=\sum_{y}p_0(y\mid x)\,e^{r(x,y)/\beta},
+\end{equation}
+equivalently $\log\big(\pi^\star(y\mid x)/p_0(y\mid x)\big)=\tfrac1\beta\,r(x,y)-\log Z_\beta(x)$.
+\end{lemma}
+\begin{proof}
+Strict concavity (convex KL, affine reward term); a multiplier $\lambda$ for $\sum_y\pi=1$ and
+stationarity $r-\beta(\log\pi-\log p_0)-\beta-\lambda=0$ give $\pi\propto p_0 e^{r/\beta}$;
+normalize and take logs.
+\end{proof}
+
+\paragraph{Mechanistic consequence (Assumption~\ref{as:reward}).}
+For a verifiable reward $r(x,y)\in\{0,1\}$, Lemma~\ref{lem:tilt} says the teacher's log-ratio to the
+base model is $r(x,y)/\beta$ up to a context-dependent constant: all high-reward completions are
+lifted, and by the \emph{same} amount $1/\beta$. The resulting logit shift $\bt(x)$ is therefore
+same-signed, shared across contexts, and low-entropy, rather than an arbitrary high-rank rewrite.
+Modeling it as rank-one-plus-residual, $\bt(x)=a(x)\,\bs+\br_\perp(x)$, is exactly
+Assumption~\ref{as:reward}; here $a(x)$ tracks how much probability mass at context $x$ sits on
+verified-correct continuations, and $\bs$ is the fixed direction that separates them from the rest.
+This structure is \emph{not} generic: a non-RL teacher produces a high-rank $\bt(x)$ whose dominant
+direction itself varies with $x$, violating Assumption~\ref{as:reward}---consistent with the
+main-text finding that only RL teachers are captured by one vector. Pulling
+Assumption~\ref{as:reward} through $J_x$ via Definition~\ref{def:metric} gives the corresponding
+representation-space needle,
+\begin{equation*}
+\bDelta(x)=a(x)\,\bw+\tilde{\bDelta}(x),
+\qquad
+\bw\ \propto\ G_x^{-1}J_x^\top F_x\,\bs ,
+\end{equation*}
+with a small transverse scatter $\tilde{\bDelta}(x)$; under Assumption~\ref{as:homog} the
+proportionality factor and $\bw$ itself are context-invariant, which is precisely the regime where a
+single constant vector fits well. (Assumption~\ref{as:shared} states this same decomposition
+restricted to the complement $\operatorname{range}(Q)$, which is where \S\ref{sec:complement} shows
+$\bw$ actually lands.)
+
+% ===========================================================================
+\section{Single-vector recovery: two equivalent forms}\label{sec:recovery}
+% ===========================================================================
+We now quantify the fit. The optimal constant vector is the metric-mean of the cloud, and the
+fraction of the gain it recovers admits two readings: a compact signal-to-fluctuation ratio
+(\S\ref{sub:snr}) and an explicit lower bound in three measurable constants (\S\ref{sub:bound}) that
+foreshadows Parts~II--III.
+
+\begin{proposition}[Optimal steering vector]\label{prop:opt}
+The minimizer of \eqref{eq:wls} over $\bdelta\in\R^d$ is
+$\bdelta^\star=\bar G^{-1}\,\E_x\!\big[G_x\bDelta(x)\big]$ with $\bar G=\E_x[G_x]$; under
+Assumption~\ref{as:homog} this reduces to the plain mean,
+\begin{equation*}
+\bdelta^\star=\bmu:=\E_{x\sim\mathcal D}\big[\bDelta(x)\big]\in\R^d .
+\end{equation*}
+\end{proposition}
+\begin{proof}
+The objective \eqref{eq:wls} is a convex quadratic in $\bdelta$; setting its gradient to zero gives
+$\E_x\!\big[G_x(\bdelta-\bDelta(x))\big]=\mathbf 0$, i.e.\ $\bar G\bdelta=\E_x[G_x\bDelta(x)]$.
+Under Assumption~\ref{as:homog}, $G_x\approx G$ factors out of both expectations.
+\end{proof}
+
+\begin{definition}[Recovery ratio]\label{def:rho}
+The \emph{recovery ratio} is the fraction of the total target energy removed by the best single
+context-invariant vector,
+\begin{equation*}
+\rho:=\frac{\E_x\Gnorm{\bDelta(x)}^2-\E_x\Gnorm{\bDelta(x)-\bdelta^\star}^2}
+{\E_x\Gnorm{\bDelta(x)}^2}\ \in[0,1],
+\end{equation*}
+where $\E_x\Gnorm{\bDelta(x)}^2$ is the loss \eqref{eq:wls} at $\bdelta=\mathbf 0$ (the base model)
+and $\E_x\Gnorm{\bDelta(x)-\bdelta^\star}^2$ its value at the optimum. Thus $\rho=1$ means one
+vector reproduces the teacher exactly, $\rho=0$ that it buys nothing.
+\end{definition}
+
+\subsection{Signal-to-fluctuation form}\label{sub:snr}
+\begin{theorem}[Recovery $=$ signal-to-fluctuation ratio]\label{thm:snr}
+Under Assumptions~\ref{as:local} and~\ref{as:homog}, define the per-context fluctuation of the
+target about its mean,
+\begin{equation*}
+\tilde{\bDelta}(x):=\bDelta(x)-\bmu\in\R^d,
+\qquad\text{so that}\qquad \E_x\big[\tilde{\bDelta}(x)\big]=\mathbf 0 .
+\end{equation*}
+Then
+\begin{equation}\label{eq:snr}
+\boxed{\
+\begin{gathered}
+\rho=\frac{\Gnorm{\bmu}^2}{\Gnorm{\bmu}^2+\E_x\Gnorm{\tilde{\bDelta}(x)}^2}
+=\frac{\SNR}{1+\SNR},\qquad
+\SNR:=\frac{\Gnorm{\bmu}^2}{\E_x\Gnorm{\tilde{\bDelta}(x)}^2}.
+\end{gathered}
+\ }
+\end{equation}
+In particular $\rho\ge0.85\iff\SNR\ge0.85/(1-0.85)\approx5.7$.
+\end{theorem}
+\begin{proof}
+With $\bdelta^\star=\bmu$ (Proposition~\ref{prop:opt}) the residual loss is
+$\E_x\Gnorm{\bDelta(x)-\bmu}^2=\E_x\Gnorm{\tilde{\bDelta}(x)}^2$, and the parallel-axis identity
+(using $\E_x[\tilde{\bDelta}(x)]=\mathbf 0$, which kills the cross term) gives
+$\E_x\Gnorm{\bDelta(x)}^2=\Gnorm{\bmu}^2+\E_x\Gnorm{\tilde{\bDelta}(x)}^2$. Substituting both into
+Definition~\ref{def:rho} yields \eqref{eq:snr}.
+\end{proof}
+
+\begin{corollary}[Spectral form]\label{cor:spectral}
+Whiten the targets by the metric, $\bu(x):=G^{1/2}\bDelta(x)\in\R^d$, and let
+\begin{equation*}
+\Sigma:=\E_x\big[\bu(x)\,\bu(x)^\top\big]\in\R^{d\times d}
+\end{equation*}
+be their second moment, with eigenvalues $\lambda_1(\Sigma)\ge\lambda_2(\Sigma)\ge\cdots\ge0$. (If
+one collects the whitened targets as the columns of a data operator $M$ whose $x$-th column is
+$\bu(x)$ weighted by $\sqrt{\mathcal D(x)}$, then $\Sigma=MM^\top$ and
+$\lambda_i(\Sigma)=\sigma_i^2(M)$; we use the two interchangeably.) Then
+\begin{equation*}
+\rho=\frac{\Gnorm{\bmu}^2}{\tr\Sigma}\ \le\ \frac{\lambda_1(\Sigma)}{\sum_i\lambda_i(\Sigma)}
+=\frac{\sigma_1^2(M)}{\sum_i\sigma_i^2(M)},
+\end{equation*}
+with equality iff $\bmu$ aligns with the leading eigenvector of $\Sigma$ (the RLVR needle case).
+\end{corollary}
+\begin{proof}
+$G^{1/2}\bmu\bmu^\top G^{1/2}=\E_x[\bu(x)]\,\E_x[\bu(x)]^\top\preceq\Sigma$ by Jensen, so
+$\Gnorm{\bmu}^2\le\lambda_1(\Sigma)$; and $\E_x\Gnorm{\bDelta(x)}^2=\tr\Sigma=\sum_i\lambda_i(\Sigma)$.
+\end{proof}
+
+\noindent
+Corollary~\ref{cor:spectral} recasts recovery as a \emph{top-singular-value energy ratio} of the
+whitened shift operator $M$; this spectral view is exactly what Part~II extends when we
+allow more than one vector.
+
+\subsection{Explicit three-constant bound}\label{sub:bound}
+Theorem~\ref{thm:snr} packs everything into one SNR. Assumptions~\ref{as:offprin}--\ref{as:shared}
+unpack it into three separately measurable constants---the principal-intrusion $\varepsilon$, the
+complement residual $\eta$, and the cross-sample consistency $\kappa$---each tied to a distinct
+experiment (\S\ref{sec:summary}).
+
+\begin{theorem}[Off-principal single-direction bound]\label{thm:bound}
+Under Assumptions~\ref{as:local}--\ref{as:shared},
+\begin{equation}\label{eq:bound}
+\boxed{\ \rho\ \ge\ \frac{\kappa}{(1+\eta)(1+\varepsilon)}.\ }
+\end{equation}
+\end{theorem}
+\begin{proof}
+From Theorem~\ref{thm:snr}, $\rho=\Gnorm{\bmu}^2/\E_x\Gnorm{\bDelta(x)}^2$. We bound the numerator
+below and the denominator above.
+
+\emph{Numerator.} Since $\bmu=\E_x[\bDelta(x)]$ and $\E_x[\bxi(x)]=\mathbf 0$, applying $Q$ and
+taking expectations in Assumption~\ref{as:shared} gives $Q\bmu=\E_x[a(x)]\,\bw$. As $\Gnorm{\bw}=1$
+and $\Gnorm{\bmu}^2\ge\Gnorm{Q\bmu}^2$ (the $G$-orthogonal split of Assumption~\ref{as:offprin}),
+\begin{equation*}
+\Gnorm{\bmu}^2\ \ge\ \big(\E_x[a(x)]\big)^2\ =\ \kappa\,\E_x[a(x)^2].
+\end{equation*}
+
+\emph{Denominator.} By the $G$-orthogonal split (Assumption~\ref{as:offprin}) together with the
+intrusion bound $\E_x\Gnorm{P\bDelta(x)}^2\le\varepsilon\,\E_x\Gnorm{Q\bDelta(x)}^2$,
+\begin{equation*}
+\E_x\Gnorm{\bDelta(x)}^2\ \le\ (1+\varepsilon)\,\E_x\Gnorm{Q\bDelta(x)}^2 .
+\end{equation*}
+By Assumption~\ref{as:shared} and the orthogonality $\E_x[\bxi(x)^\top G\bw]=0$,
+\begin{equation*}
+\E_x\Gnorm{Q\bDelta(x)}^2=\E_x\Gnorm{a(x)\,\bw+\bxi(x)}^2
+=\E_x[a(x)^2]\,\Gnorm{\bw}^2+\E_x\Gnorm{\bxi(x)}^2=(1+\eta)\,\E_x[a(x)^2].
+\end{equation*}
+Hence $\E_x\Gnorm{\bDelta(x)}^2\le(1+\varepsilon)(1+\eta)\,\E_x[a(x)^2]$. Dividing the two displays,
+the common factor $\E_x[a(x)^2]$ cancels and \eqref{eq:bound} follows.
+\end{proof}
+
+\begin{corollary}[Coefficient-of-variation form]\label{cor:cv}
+Since $\kappa=1/(1+\CV(a)^2)$, where
+$\CV(a)^2=\Var_x\big(a(x)\big)\big/\big(\E_x[a(x)]\big)^2$ is the squared coefficient of variation
+of the per-context strength,
+\begin{equation*}
+\rho\ \ge\ \frac{1}{(1+\CV(a)^2)(1+\eta)(1+\varepsilon)} .
+\end{equation*}
+\end{corollary}
+
+\paragraph{Reading, and bridge to Part~II.}
+A single vector recovers most of the gain when \emph{three} conditions hold jointly: the update is
+\textbf{off-principal} ($\varepsilon$ small---the quantity monitored as PSI in
+Part~III); the complement residual is \textbf{low-dimensional} ($\eta$ small---the
+quantity that grows at high layers, \S\ref{sec:validity}); and the per-sample corrections are
+\textbf{strongly co-directional} ($\CV(a)^2$ small, i.e. $\kappa\to1$---supplied by the low-entropy
+verifiable reward of \S\ref{sec:tilt}). Two questions remain, and organize Part~II:
+if the complement residual $\eta$ is nonzero, \emph{what does that residual subspace look like}
+(is it one extra direction, or many)? And \emph{where does the effective subspace sit} relative to
+the activation principal subspace? We answer both by training more than one vector.
+
+% ###########################################################################
+\subsection*{Part II.\quad Multi-Vector Steering: The Geometry of the Residual Subspace}
+% ###########################################################################
+\noindent\emph{Part~I showed one vector captures the dominant mode. Here we
+characterize everything beyond it. We prove that the sequential-orthogonal training procedure of the
+main text is a deflation of the same whitened second moment $\Sigma$ of
+Corollary~\ref{cor:spectral}, so ``dominant first vector $+$ diminishing returns'' is exactly
+``one large eigenvalue $+$ fast spectral decay''
+(\S\ref{sec:multi}); and that the effective directions, at every order, avoid the high-variance
+principal subspace and live in its low-variance complement---which we corroborate independently in
+weight space (\S\ref{sec:complement}).}
+
+% ===========================================================================
+\section{Sequential-orthogonal steering is deflation}\label{sec:multi}
+% ===========================================================================
+The main text learns, at each controlled layer, an ordered set of context-invariant vectors
+$\bv^{(0)},\dots,\bv^{(K)}\in\R^d$: it trains $\bv^{(0)}$ to convergence with free norm and freezes
+it, and for each subsequent $k$ projects the gradient onto the orthogonal complement of
+$\operatorname{span}\{\bv^{(j)}\}_{j<k}$ before every step (main-text Eq.~3). We show this is
+not an ad hoc procedure but literally a truncated eigendecomposition of the matrix $\Sigma$ of
+Corollary~\ref{cor:spectral}.
+
+\begin{theorem}[Multi-vector steering $=$ truncated SVD]\label{thm:svd}
+Under Assumptions~\ref{as:local} and~\ref{as:homog}, with the loss \eqref{eq:wls}, the procedure
+returns, in order, the leading eigenvectors of $\Sigma$ (equivalently the leading left singular
+vectors of $M$, since $\Sigma=MM^\top$). Writing $\rho_K$ for the recovery ratio of
+Definition~\ref{def:rho} after $K$ vectors,
+\begin{equation}\label{eq:rhoK}
+\rho_K=\frac{\sum_{i\le K}\lambda_i(\Sigma)}{\sum_i\lambda_i(\Sigma)},
+\qquad \rho_K-\rho_{K-1}=\frac{\lambda_K(\Sigma)}{\sum_i\lambda_i(\Sigma)} ,
+\end{equation}
+i.e.\ the marginal gain of the $K$-th vector is exactly its share of the spectrum.
+\end{theorem}
+\begin{proof}
+Minimizing \eqref{eq:wls} over a free-magnitude vector constrained to a subspace
+$\mathcal V\subseteq\R^d$ selects, by the Rayleigh quotient, the top eigenvector of $\Sigma$ within
+$G^{1/2}\mathcal V$. The orthogonality constraint restricts $\bv^{(k)}$ to the complement of the
+first $k$ directions; by Courant--Fischer the maximizer there is the $(k{+}1)$-th eigenvector of
+$\Sigma$ overall---one step of orthogonal iteration with deflation. The captured energy therefore
+telescopes to the partial eigenvalue sum in \eqref{eq:rhoK}.
+\end{proof}
+
+\paragraph{Signatures matched to measurement.}
+Theorem~\ref{thm:svd} identifies each empirical signature with a spectral property of $\Sigma$:
+$\bv^{(0)}$ dominant ($\rho_0>0.85$ $=$ one large eigenvalue $=$
+Theorems~\ref{thm:snr}/\ref{thm:bound}); diminishing returns (the marginal share
+$\lambda_K(\Sigma)/\sum_i\lambda_i(\Sigma)$ decays with the spectrum); larger models $\Rightarrow$
+flatter spectrum $\Rightarrow$ slower decay; and low-dimensional-but-not-1D (the effective rank of
+$\Sigma$ exceeds $1$: several shared sub-skill modes survive above the noise floor). This last point
+answers the first Part~II question: the residual is a genuine low-dimensional \emph{subspace}, not a
+single leftover direction, and its total energy is exactly the $\eta$ of Assumption~\ref{as:shared}.
+No context-invariant vector can fit the per-context fluctuation $\tilde{\bDelta}(x)$;
+Theorem~\ref{thm:svd} characterizes recovery over the shared, context-invariant-realizable part
+(\S\ref{sec:validity} makes this boundary precise).
+
+% ===========================================================================
+\section{Effective directions avoid the principal subspace}\label{sec:complement}
+% ===========================================================================
+We now answer the second Part~II question: \emph{where} does the effective subspace
+sit? Empirically (main text), the learned vectors carry $\approx0.52\%$ (random baseline $8/d$) of
+their energy in the top-8 activation PCs, though those PCs hold $>99\%$ of activation variance
+(top-1 PC $=98.8\%$). We explain this from the mismatch between two metrics, then corroborate it in
+weight space.
+
+\begin{definition}[Variance vs.\ sensitivity metrics]\label{def:CG}
+Two different PSD matrices on $\R^{d}$ act on the same hidden space, and the whole section rests on
+their mismatch:
+\begin{equation*}
+C:=\E_{x\sim\mathcal D}\big[\bh_\ell(x)\,\bh_\ell(x)^\top\big]\in\R^{d\times d},
+\qquad
+G=\E_x[G_x]\in\R^{d\times d}\ \ (\text{Assumption~\ref{as:homog}}).
+\end{equation*}
+$C$ is the \emph{activation covariance}: its top-$m$ eigenvectors span the \emph{principal
+subspace}, with orthogonal projector $P$ and complement projector $Q=\bI-P$ as in
+Assumption~\ref{as:offprin}. $G$ is the \emph{output-sensitivity} metric of
+Definition~\ref{def:metric} (for the final-layer site $J_x=U$ it is $G=U^\top\E_x[F_x]\,U$). In
+words: $C$ is large along directions in which the representation \emph{varies} most across
+contexts, $G$ along directions to which the \emph{output distribution} is most sensitive. Nothing
+forces these to coincide, and the empirical finding is that they do not.
+\end{definition}
+
+\begin{proposition}[Metric mismatch $\Rightarrow$ complement steering]\label{prop:mismatch}
+Suppose the principal subspace is $G$-negligible while the complement is not, quantitatively
+\begin{equation*}
+g_P:=\lambda_{\max}\big(P\,G\,P\big)
+\quad\text{is small, and}\quad
+g_Q:=\lambda_{\min}\big(Q\,G\,Q\big)\big|_{\operatorname{span}\{Q\bDelta(x)\}}
+\quad\text{is bounded away from }0 .
+\end{equation*}
+Then the intrusion constant \eqref{eq:eps} of Assumption~\ref{as:offprin} obeys
+\begin{equation*}
+\varepsilon
+=\frac{\E_x\Gnorm{P\bDelta(x)}^2}{\E_x\Gnorm{Q\bDelta(x)}^2}
+\ \le\ \frac{g_P}{g_Q}\cdot
+\frac{\E_x\|P\bDelta(x)\|^2}{\E_x\|Q\bDelta(x)\|^2},
+\end{equation*}
+with $\|\cdot\|$ the Euclidean norm. Hence, as long as the Euclidean split is not itself extreme,
+$g_P\ll g_Q$ forces $\varepsilon\ll1$: the optimal vector $\bdelta^\star=\bmu$ is effectively
+$G$-orthogonal to the activation principal subspace.
+\end{proposition}
+\begin{proof}
+$\Gnorm{P\bDelta(x)}^2=\big(P\bDelta(x)\big)^\top G\big(P\bDelta(x)\big)\le g_P\|P\bDelta(x)\|^2$ by
+the definition of $g_P$, and likewise $\Gnorm{Q\bDelta(x)}^2\ge g_Q\|Q\bDelta(x)\|^2$. Take
+expectations and divide.
+\end{proof}
+
+\paragraph{Why the premise ($g_P$ small) holds.}
+The dominant activation PC is a high-norm common-mode/bias direction (participation ratio
+$\approx1$; top-1 PC $=98.8\%$ of the variance of $C$). The softmax is exactly invariant to a
+constant offset of all logits and nearly invariant to any offset close to it; concretely, a hidden
+direction $v\in\R^d$ whose image $Uv\in\R^V$ is close to the all-ones logit direction satisfies
+$F_xUv\approx\mathbf 0$ for every $x$, because the all-ones vector is in the kernel of
+$F_x=\diag(p)-pp^\top$. Such a $v$ therefore has $\Gnorm{v}=\|U v\|_{\E_x[F_x]}\approx0$: it carries
+almost all of $C$ but almost none of $G$, which is exactly $g_P$ small. Forcing updates there yields
+no gain while injecting coarse perturbations (main-text principal-subspace ablation). This is the
+geometric origin of small $\varepsilon$ in Theorem~\ref{thm:bound}.
+
+\subsection{A weight-space account of the same phenomenon}
+Proposition~\ref{prop:mismatch} is an \emph{activation-space} statement obtained from a
+metric-mismatch argument. It is instructive to recover the same off-principal conclusion from the
+side of the \emph{weights}, since the two derivations reinforce one another and connect the
+activation geometry to the update dynamics.
+
+\paragraph{Why the update stays off the weight principals.}
+Let $W\in\R^{d\times d'}$ be the weight matrix of the layer in question, with singular value
+decomposition $W=\sum_{i} s_i\,\bp_i\bq_i^\top$ ($s_1\ge s_2\ge\cdots\ge0$, left singular vectors
+$\bp_i\in\R^{d}$, right singular vectors $\bq_i\in\R^{d'}$), and let $\Delta W\in\R^{d\times d'}$ be
+the weight update accumulated by RLVR. We call $\operatorname{span}\{\bp_i\}_{i\le k}$ the
+\emph{weight principals} and write
+\begin{equation*}
+\PW:=\sum_{i\le k}\bp_i\bp_i^\top\in\R^{d\times d}
+\end{equation*}
+for the orthogonal projector onto them. Three mechanisms, all operative in RLVR, jointly keep
+$\Delta W$ off these directions---i.e.\ keep $\|\PW\Delta W\|$ small---leaving the weight spectrum
+$\{s_i\}$ nearly unchanged. \textbf{(I)~KL anchor}: the KL-to-base penalty enforces a trust region,
+bounding $\|\Delta W\|$ (the same small-step hypothesis as Assumption~\ref{as:local}).
+\textbf{(II)~Curvature geometry}: the loss curvature is concentrated on the principal directions, so
+moving along a top left-singular direction incurs a large second-order cost, and a norm-bounded
+update travels farthest per unit KL along the low-curvature complement. \textbf{(III)~Precision}:
+under low-precision (bf16) training, sub-precision updates to high-magnitude principal components
+are quantized away, further suppressing on-principal movement.
+
+\begin{lemma}[Weight-off-principal $\Rightarrow$ activation-off-principal]\label{lem:bridge}
+Consider a layer that maps its input $\bc(x)\in\R^{d'}$ at context $x$ to the hidden state
+\begin{equation*}
+\bh_\ell(x)=\phi\big(W\bc(x)\big)\in\R^{d},
+\end{equation*}
+where $\phi:\R\to\R$ is the (elementwise) activation function. Write $\phi'$ for its derivative and
+let
+\begin{equation*}
+D(x):=\diag\Big(\phi'\big(W\bc(x)\big)\Big)\in\R^{d\times d}
+\end{equation*}
+be the Jacobian of $\phi$ evaluated at the pre-activation of that same context $x$; $D(x)$ is a
+matrix-valued quantity that depends on $x$ only through the pre-activation, and it is bounded,
+$\|D(x)\|\le\sup_{u\in\R}|\phi'(u)|<\infty$, for the activation functions in use. Let $P$ be the
+activation-principal projector
+of Definition~\ref{def:CG} and $\PW$ the weight-principal projector above. Then the first-order
+activation shift induced by the weight update, $\Dh(x):=D(x)\,\Delta W\,\bc(x)\in\R^d$, satisfies
+\begin{equation}\label{eq:bridge}
+\big\|P\,\Dh(x)\big\|
+\ \le\ \underbrace{\|D(x)\|\;\big\|\PW\Delta W\big\|\;\|\bc(x)\|}_{\text{(a) on-principal weight mass}}
+\ +\ \underbrace{\big\|P\,D(x)\,(\bI-\PW)\big\|\;\big\|\Delta W\big\|\;\|\bc(x)\|}_{\text{(b) leakage through the complement}} .
+\end{equation}
+If (i) $\|\PW\Delta W\|$ is small (mechanisms I--III above), and (ii) the top activation PCs coincide
+with the high-gain weight directions, i.e.\ $\operatorname{range}(P)\approx\operatorname{range}(\PW)$
+so that $P\,D(x)\,(\bI-\PW)\approx0$, then both terms are small: $\|P\,\Dh(x)\|\ll\|\Dh(x)\|$, which
+is precisely $\varepsilon$ small in Assumption~\ref{as:offprin}.
+\end{lemma}
+\begin{proof}
+Split the update as $\Delta W=\PW\Delta W+(\bI-\PW)\Delta W$ and apply $P\,D(x)\,\cdot\,\bc(x)$ to
+each part:
+\begin{equation*}
+P\,\Dh(x)=P\,D(x)\,\PW\Delta W\,\bc(x)\;+\;P\,D(x)\,(\bI-\PW)\,\Delta W\,\bc(x).
+\end{equation*}
+The triangle inequality plus submultiplicativity---bounding $\|P\|\le1$ and $\|D(x)\|$ in the first
+term, and grouping $P D(x)(\bI-\PW)$ as a single operator in the second---gives \eqref{eq:bridge}.
+Term (a) is small by (i); term (b) by (ii).
+\end{proof}
+
+\noindent
+Condition (ii) is the measured $98.8\%$ alignment used in Proposition~\ref{prop:mismatch}. Thus the
+weight-space mechanisms (supplying (i)) plus this alignment (supplying (ii)) reproduce our
+activation-space Proposition~\ref{prop:mismatch}---and hence small $\varepsilon$ in
+Theorem~\ref{thm:bound}---from an independent premise:
+\begin{equation*}
+\begin{gathered}
+\underbrace{\text{KL}+\text{curvature}+\text{precision}}_{\text{weight space}}
+\ \Rightarrow\
+\underbrace{\Delta W\perp\text{weight principals}}_{\text{mechanism II}}\\[2pt]
+\xRightarrow{\ \text{Lem.\,\ref{lem:bridge}}\ }\
+\underbrace{\Dh(x)\perp\text{activation principals}}_{\text{Prop.\,\ref{prop:mismatch},\ }\varepsilon\downarrow}.
+\end{gathered}
+\end{equation*}
+This two-space agreement---small $\varepsilon$ whether measured in weights or activations---is the
+foundation on which Part~III builds its method. The two derivations are complementary rather than
+redundant: Proposition~\ref{prop:mismatch} explains \emph{why the endpoint is off-principal} (the
+optimum of the least-squares problem lies in the low-$C$/high-$G$ complement), while
+Lemma~\ref{lem:bridge} explains \emph{why the trajectory stays there} (the norm-bounded, curvature-
+and precision-limited update never develops on-principal weight mass in the first place). One is a
+statement about the solution, the other about the dynamics that reach it; together they make the
+off-principal conclusion robust to how one chooses to look at the model.
+
+% ###########################################################################
+\subsection*{Part III.\quad Why Alpha-Stabler Works}
+% ###########################################################################
+\noindent\emph{Parts~I--II established that healthy RLVR keeps its
+update off the principal subspace (small $\varepsilon$), where the effective, recovery-bearing
+directions live. Part~III makes this operational. We show the principal-subspace
+intrusion is a directly measurable estimate of $\varepsilon$ and hence a predictive health signal
+(\S\ref{sec:predicter}); that clipping it restores small $\varepsilon$ while preserving the
+effective complement update; and we delimit exactly when the whole theory applies
+(\S\ref{sec:validity}), closing with a summary against experiment (\S\ref{sec:summary}).}
+
+% ===========================================================================
+\section{Principal-subspace intrusion as a predictive signal}\label{sec:predicter}
+% ===========================================================================
+The bound \eqref{eq:bound} degrades as $\varepsilon$ grows, and Lemma~\ref{lem:bridge} ties growing
+$\varepsilon$ to the pathological event of the update drifting \emph{onto} the
+principals. This suggests monitoring $\varepsilon$ online. Fix the base principal subspace once, at
+the start of training: let $\mathcal U_\ell\in\R^{d\times k}$ hold the top-$k$ activation PCs of the
+\emph{base} model at layer $\ell$ (the leading eigenvectors of $C$, Definition~\ref{def:CG}) and set
+$P_\ell:=\mathcal U_\ell\mathcal U_\ell^\top$, held constant thereafter. At training step $t$, let
+$\bar\bh_\ell^{(t)}\in\R^d$ be the batch-mean hidden state at layer $\ell$ and
+$\bar\bh_\ell^{\mathrm{base}}$ the same quantity for the base model on the same data. Their
+difference---an \emph{empirical} counterpart of the target shift $\bDelta(x)$, averaged over the
+batch rather than evaluated at a single context, hence the distinct symbol---is
+\begin{equation*}
+\Dhat_\ell^{(t)}:=\bar\bh_\ell^{(t)}-\bar\bh_\ell^{\mathrm{base}}\in\R^d ,
+\end{equation*}
+and we define the \emph{principal-subspace intrusion} as the fraction of its energy inside $P_\ell$,
+\begin{equation}\label{eq:psi}
+\mathrm{PSI}_\ell^{(t)}:=\frac{\big\|P_\ell\Dhat_\ell^{(t)}\big\|^2}{\big\|\Dhat_\ell^{(t)}\big\|^2}
+\ \in[0,1].
+\end{equation}
+
+\begin{corollary}[PSI is the empirical $\varepsilon$]\label{cor:psi}
+Up to the $G$-vs-Euclidean reweighting, $\mathrm{PSI}_\ell^{(t)}$ estimates the intrusion ratio
+$\varepsilon/(1+\varepsilon)$ of Assumption~\ref{as:offprin}. By
+Proposition~\ref{prop:mismatch} a healthy update has $\mathrm{PSI}_\ell^{(t)}\approx0$; a sustained
+rise signals $\varepsilon$ growing---update energy migrating into the high-variance, low-effect
+principal subspace---which by Theorem~\ref{thm:bound} directly degrades the recovery bound $\rho$.
+\end{corollary}
+\begin{proof}
+Under the split of Assumption~\ref{as:offprin}, identity \eqref{eq:epsfrac} reads
+$\E_x\Gnorm{P\bDelta(x)}^2\big/\E_x\Gnorm{\bDelta(x)}^2=\varepsilon/(1+\varepsilon)$; the quantity
+$\mathrm{PSI}_\ell^{(t)}$ of \eqref{eq:psi} is its Euclidean, batch-averaged analogue, obtained by
+replacing $\Gnorm{\cdot}$ with $\|\cdot\|$ and $\bDelta(x)$ with $\Dhat_\ell^{(t)}$.
+Proposition~\ref{prop:mismatch} gives $\Gnorm{P_\ell\bdelta^\star}\approx0$, hence
+$\mathrm{PSI}_\ell^{(t)}\approx0$ while training is healthy; any rise increases the
+$(1+\varepsilon)$ factor in the denominator of \eqref{eq:bound}.
+\end{proof}
+
+\paragraph{Predicter.}
+Corollary~\ref{cor:psi} makes the \textbf{Predicter} a direct readout of $\varepsilon$ (and, via
+Lemma~\ref{lem:bridge}, of on-principal weight drift). Because $\rho$ degrades \emph{as} $\varepsilon$
+rises---before the loss visibly diverges---a threshold or slope test on $\mathrm{PSI}_\ell^{(t)}$
+raises a collapse warning ahead of the reward crash.
+
+\paragraph{Controller.}
+The \textbf{Controller} restores small $\varepsilon$ by clipping the principal component of the
+observed shift. At step $t$ it replaces the layer-$\ell$ hidden state of every token in the batch by
+\begin{equation}\label{eq:controller}
+\tilde\bh_\ell(x)=\bh_\ell(x)-\alpha^{(t)}_\ell\,P_\ell\Dhat_\ell^{(t)},
+\qquad
+\alpha^{(t)}_\ell=\max\!\left\{0,\ 1-\sqrt{\frac{\tau}{\mathrm{PSI}_\ell^{(t)}}}\right\},
+\end{equation}
+where the scalar gain $\alpha^{(t)}_\ell\in[0,1)$ is null whenever
+$\mathrm{PSI}_\ell^{(t)}\le\tau$ and otherwise shrinks the intrusion energy back to exactly the safe
+level $\tau$. Note that the subtracted vector $P_\ell\Dhat_\ell^{(t)}$ carries no $(x)$: it is the
+same batch-level correction for every token, so the Controller changes only the shared component and
+leaves all context-dependent structure untouched. Crucially, the effective complement component
+$(\bI-P_\ell)\Dhat_\ell^{(t)}$---the update that Theorems~\ref{thm:snr}--\ref{thm:bound} identify as
+recovery-bearing---is preserved exactly.
+This is the same orthogonal-complement principle as the sequential-orthogonal training of
+\S\ref{sec:multi}, now applied dynamically: training enforces orthogonality \emph{by construction},
+while the Controller restores it \emph{on demand}. Alpha-Stabler thus works precisely because it
+targets the one geometric quantity the theory identifies as causal for both recovery
+(Theorem~\ref{thm:bound}) and collapse (Corollary~\ref{cor:psi}).
+
+\paragraph{Choosing the threshold $\tau$.}
+The theory also indicates how to set $\tau$ without per-task tuning. Since
+$\mathrm{PSI}$ estimates $\varepsilon/(1+\varepsilon)$ (Corollary~\ref{cor:psi}) and healthy training
+keeps $\mathrm{PSI}$ near a small, model-specific baseline $\mathrm{PSI}_0$ (the residual intrusion
+of the base model on held-out data), a natural rule is to set $\tau$ a fixed multiple above that
+baseline, $\tau=c\,\mathrm{PSI}_0$ with $c\in[2,3]$, estimated once from a short warm-up window.
+This is scale-free---it triggers on a \emph{relative} departure from the model's own healthy
+regime rather than an absolute value---so it transfers across models and tasks without retuning.
+Because the Controller is null whenever $\mathrm{PSI}\le\tau$, it is inert during healthy training
+and incurs no throughput cost there; it engages only once intrusion crosses the baseline band, so
+frequent triggering is itself a diagnostic that the run has entered the collapse regime rather than
+a sign of an over-aggressive controller.
+
+% ===========================================================================
+\section{Regime of validity}\label{sec:validity}
+% ===========================================================================
+The bound \eqref{eq:bound} degrades when any of $\varepsilon,\eta,\CV(a)^2$ grows, and each failure
+mode is observed:
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+\item \textbf{High layers $\Rightarrow$ $\eta$ grows.} Near the output, few nonlinear layers remain
+to expand a constant offset into a context-appropriate correction; the required shift becomes
+context-dependent, so the complement residual $\bxi(x)$ (hence $\eta$) grows and the bound weakens
+---the observed high-layer failure. The near-binary gating (main-text Fig.~4b) is the degenerate
+case of Assumption~\ref{as:shared} in which $a(x)$ collapses to a two-valued function of $x$ rather
+than a smooth modulator. The rank-$r$ gated correction rescues performance precisely by adding the
+minimal context-dependence that shrinks $\eta$.
+\item \textbf{Distant / non-RL teachers $\Rightarrow$ $\CV(a)^2$ grows and
+Assumption~\ref{as:reward} fails.} Corrections become multi-directional and no longer co-signed, so
+$a(x)$ varies wildly across contexts and $\kappa=1/(1+\CV(a)^2)$ drops; a non-RL teacher's high-rank
+tilt violates Assumption~\ref{as:reward} outright.
+\item \textbf{Forcing updates into the principal subspace $\Rightarrow$ $\varepsilon$ maximal.}
+This discards $Q\bDelta(x)$ and keeps only the $\varepsilon$-controlled part $P\bDelta(x)$; $\rho$
+collapses (principal-subspace ablation).
+\end{itemize}
+The three constants thus give a unified account of both the success and failure regimes---and,
+through Corollary~\ref{cor:psi}, tell the Controller exactly which quantity to hold in check.
+
+\paragraph{Trade-offs among the constants, and the injection-depth sweet spot.}
+The three constants are not independent knobs; the bound \eqref{eq:bound} makes their tension
+explicit. Moving the injection site \emph{later} in the network reduces $\varepsilon$ (deeper
+representations are further from the high-variance input principal subspace) but increases $\eta$
+(fewer downstream layers remain to turn a constant offset into a context-appropriate correction).
+Moving it \emph{earlier} does the reverse. Since $\rho$ multiplies $(1+\eta)^{-1}(1+\varepsilon)^{-1}$,
+the recovery-optimal depth is the one that jointly minimizes $(1+\eta)(1+\varepsilon)$---a sweet spot
+at low-to-middle layers, which is exactly where single-vector steering is observed to work best.
+This turns the qualitative ``low/mid layers are best'' observation into a quantitative prediction of
+the theory.
+
+\paragraph{Beyond verifiable rewards (RLHF).}
+Assumption~\ref{as:reward} is stated for verifiable $r\in\{0,1\}$, but the mechanism only requires
+that the reward's realized logit tilt be \emph{low-entropy}---dominated by a few shared directions.
+For RLHF with a learned reward model, the relevant quantity is the effective rank of that model's
+induced tilt: a well-structured reward model still yields a small $\eta$ and large $\kappa$, and the
+theory applies with $\kappa$ reinterpreted as the cross-sample consistency of the \emph{learned}
+reward direction rather than of a binary signal. The prediction is graded rather than binary: the
+lower-dimensional and more consistent the reward model's preferences, the closer single-vector
+steering should come to full recovery. A purely arbitrary, high-rank reward (the non-RL-teacher
+limit) violates Assumption~\ref{as:reward} and lies outside the theory---consistent with the
+observed failure of single-vector steering on non-RL teachers.
+
+% ===========================================================================
+\section{Summary of results and empirical status}\label{sec:summary}
+% ===========================================================================
+\begin{table}[h]
+\centering\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{@{}Xllc@{}}
+\toprule
+\textbf{Prediction} & \textbf{Result} & \textbf{Constant} & \textbf{Status} \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{Part I --- single-vector steering}}\\
+Distillation $\equiv$ weighted least squares in $G$ & Prop.~\ref{prop:wls} & --- & exact under A.\ref{as:local} \\
+RL logit shift $=$ reward tilt $r/\beta$ & Lem.~\ref{lem:tilt} & --- & exact \\
+$\rho=\SNR/(1{+}\SNR)$; $\rho>0.85\Rightarrow\SNR\gtrsim5.7$ & Thm.~\ref{thm:snr} & --- & $>85\%$ recovery \\
+Recovery $=$ top-mode energy ratio & Cor.~\ref{cor:spectral} & --- & confirmed \\
+$\rho\ge\kappa/((1{+}\eta)(1{+}\varepsilon))$ & Thm.~\ref{thm:bound} & $\varepsilon,\eta,\kappa$ & three-way \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{Part II --- multi-vector steering}}\\
+Multi-vector gain $=$ singular-value partial sum & Thm.~\ref{thm:svd} & --- & $\bv^{(0)}$ dominant \\
+Larger models $\Rightarrow$ slower decay & Thm.~\ref{thm:svd} & --- & across scales \\
+Effective vectors $\perp$ top activation PCs & Prop.~\ref{prop:mismatch} & $\varepsilon\!\downarrow$ & energy $0.52\%$ \\
+Forcing updates onto top PCs $\Rightarrow$ no gain & Prop.~\ref{prop:mismatch} & $\varepsilon\!\uparrow$ & ablation \\
+Weight-off-prin.\ $\Rightarrow$ activation-off-prin. & Lem.~\ref{lem:bridge} & $\varepsilon\!\downarrow$ & weight-space \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{Part III --- the method}}\\
+$\mathrm{PSI}\approx\varepsilon/(1{+}\varepsilon)$; predictive & Cor.~\ref{cor:psi} & $\varepsilon$ & PSI crash curve \\
+High layers need input-dependence & \S\ref{sec:validity} & $\eta\!\uparrow$ & layer + gating \\
+Non-RL / distant teachers $\Rightarrow$ failure & \S\ref{sec:validity} & $\kappa\!\downarrow$ & teacher-type \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Summary.}
+KL-regularized RLVR tilts the base policy along a low-entropy, verifiable-reward direction
+(Lemma~\ref{lem:tilt}); pulled into representation space this makes the teacher$\to$base shift a
+needle-shaped cloud (Assumption~\ref{as:reward}). \textbf{(Part~I)} The best context-invariant vector
+is the metric-mean of that cloud---equivalently the top singular direction of the whitened shift
+operator---recovering a fraction $\rho=\SNR/(1{+}\SNR)$ (Theorem~\ref{thm:snr}), lower-bounded
+explicitly by $\kappa/((1{+}\eta)(1{+}\varepsilon))$ (Theorem~\ref{thm:bound}). \textbf{(Part~II)}
+Sequentially orthogonal vectors deflate the same operator (Theorem~\ref{thm:svd}), and the effective
+directions live in the low-variance complement (Proposition~\ref{prop:mismatch}), corroborated in
+weight space (Lemma~\ref{lem:bridge}). \textbf{(Part~III)} The intrusion $\varepsilon$ is measurable
+online as PSI (Corollary~\ref{cor:psi}), so monitoring and clipping it stabilizes training while
+preserving the effective update. In one line: \emph{RLVR's effective update is off-principal first,
+and approximately rank-one within the off-principal complement---so watching the principal subspace
+is both how we understand it and how we keep it stable.}
+
+\paragraph{Identities at a glance.}
+The single recovery ratio $\rho$ reads three equivalent ways and admits the three-constant bound
+(all quantities as defined above: $\bmu=\E_x[\bDelta(x)]$, $\tilde{\bDelta}(x)=\bDelta(x)-\bmu$,
+and $\lambda_i(\Sigma)=\sigma_i^2(M)$ the whitened spectrum of Corollary~\ref{cor:spectral}):
+\begin{align}
+\rho
+&=\underbrace{\frac{\Gnorm{\bmu}^2}{\Gnorm{\bmu}^2+\E_x\Gnorm{\tilde{\bDelta}(x)}^2}}_{\text{bias--variance}}
+ =\underbrace{\frac{\SNR}{1+\SNR}}_{\text{signal ratio}}
+ =\underbrace{\frac{\lambda_1(\Sigma)}{\sum_i\lambda_i(\Sigma)}}_{\text{top-mode energy}}
+ \label{eq:glance1}\\[6pt]
+&\ge\ \underbrace{\frac{\kappa}{(1+\eta)(1+\varepsilon)}}_{\text{three-constant bound}},
+ \qquad
+ \rho_K=\frac{\sum_{i\le K}\lambda_i(\Sigma)}{\sum_i\lambda_i(\Sigma)}\ \ (\text{after $K$ vectors}).
+ \label{eq:glance2}
+\end{align}
+The third equality in \eqref{eq:glance1} holds in the needle case of Corollary~\ref{cor:spectral}
+(i.e.\ when $\bmu$ aligns with the leading eigenvector of $\Sigma$) and is an upper bound in
+general.
+
+%%% END BODY %%%
+
+\end{document}

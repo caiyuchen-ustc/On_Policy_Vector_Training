@@ -1,6 +1,6 @@
 {
  "meta": {
-  "title": "Off-Policy Distillation on IFeval with Qwen2.5-7B-Deepseek",
+  "title": "IFeval \u00b7 Qwen2.5-7B-Deepseek",
   "teacher_score": 0.63,
   "val_metric": "val-core/ifevalg/reward/mean@4"
  },

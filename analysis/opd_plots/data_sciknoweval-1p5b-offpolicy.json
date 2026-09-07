@@ -1,6 +1,6 @@
 {
  "meta": {
-  "title": "Off-Policy Distillation on SciKnowEval with Qwen2.5-1.5B-Deepseek",
+  "title": "SciKnowEval \u00b7 Qwen2.5-1.5B-Deepseek",
   "teacher_score": 0.72,
   "val_metric": "val-core/sciknoweval/reward/mean@4"
  },

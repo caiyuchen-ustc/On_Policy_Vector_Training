@@ -1,6 +1,6 @@
 {
  "meta": {
-  "title": "On-Policy Distillation on Science with Qwen2.5-1.5B-Deepseek",
+  "title": "Science \u00b7 Qwen2.5-1.5B-Deepseek",
   "teacher_score": 0.81,
   "val_metric": "critic/score/mean"
  },

@@ -15,8 +15,12 @@ Takeaway: across all layers the trained vector sits essentially where a RANDOM
 vector would (centroid ≈ baseline, energy ≈ 1x) -> it does NOT ride the hidden
 state's principal directions; it steers a low-variance, off-principal direction.
 
+Canvas/fonts come from ../opd_plots/panel_style.py (via _panel_style). This is
+the one 1x2 row in the group, so it uses save_wide(): each subplot gets exactly
+the same axes size as a standalone panel, on a double-width canvas.
+
 Rerun:  python make_hidden_subspace_fig.py
-Output: fig/opd_hidden-subspace.svg
+Output: figs/opd_hidden-subspace.svg
 """
 
 import csv
@@ -26,6 +30,9 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+from _panel_style import (FS_AXLABEL, FS_LEGEND, FS_TITLE, WIDE_FIGSIZE,
+                          panel_rc, save_wide)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CSV = os.path.join(HERE, "out", "hidden_subspace.csv")
@@ -37,13 +44,8 @@ C_RAND   = "#888888"
 
 
 def _rc():
-    plt.rcParams.update({
-        "font.size": 18, "font.family": "DejaVu Sans",
-        "axes.edgecolor": "#666666", "axes.linewidth": 1.0,
-        "axes.grid": True, "grid.color": "#ececec", "grid.linewidth": 0.9,
-        "xtick.labelsize": 12.5, "ytick.labelsize": 12.5,
-        "figure.dpi": 400, "savefig.dpi": 400,
-    })
+    # Canvas and fonts come from panel_style so this row matches the rest.
+    panel_rc()
 
 
 def main():
@@ -55,43 +57,48 @@ def main():
     rand_rank = float(rows[0]["pc_centroid_rand"])
 
     _rc()
-    fig, axes = plt.subplots(1, 2, figsize=(12.6, 5.0))
+    fig, axes = plt.subplots(1, 2, figsize=WIDE_FIGSIZE)
 
     # ---- left: energy in principal subspace ----
     ax = axes[0]
     ax.axhspan(0.0, 1.0, color="#eef3fb", alpha=0.9, zorder=0)          # "off-principal" band
-    ax.axhline(1.0, color=C_RAND, ls="--", lw=1.8, zorder=2, label="random vector")
-    ax.plot(L, E, "-", color=C_ENERGY, lw=1.6, alpha=0.5, zorder=3)
-    ax.scatter(L, E, s=55, color=C_ENERGY, edgecolors="white", linewidths=1.2, zorder=4)
-    ax.set_xlabel("Layer", fontsize=15, labelpad=8)
-    ax.set_ylabel("Energy in hidden top-20 PC  (/ random)", fontsize=13.5, labelpad=8)
-    ax.set_title("Vector energy in the hidden principal subspace", fontsize=13.5, pad=10)
+    ax.axhline(1.0, color=C_RAND, ls="--", lw=1.4, zorder=2, label="Random vector")
+    # Markers scale with the canvas: each subplot is a 229 pt panel, not half of
+    # a 12.6 in figure, so s=55 would fuse the per-layer points together.
+    ax.plot(L, E, "-", color=C_ENERGY, lw=1.0, alpha=0.5, zorder=3)
+    ax.scatter(L, E, s=24, color=C_ENERGY, edgecolors="white", linewidths=0.7, zorder=4)
+    ax.set_xlabel("Layer", fontsize=FS_AXLABEL, labelpad=6)
+    # Both labels are held under the 148 pt axis height (the originals were 245
+    # and 215 pt) and both titles under the 229 pt axes width (271 and 299 pt).
+    ax.set_ylabel("Energy / random vector", fontsize=FS_AXLABEL, labelpad=6)
+    ax.set_title("Energy in the Principal Subspace", fontsize=FS_TITLE, pad=9)
     ax.set_xlim(L.min() - 1, L.max() + 1)
     ax.margins(y=0.08)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
-    ax.legend(loc="upper left", fontsize=11, framealpha=0.95, edgecolor="#dddddd")
+    ax.legend(loc="upper left", fontsize=FS_LEGEND, framealpha=0.95,
+              edgecolor="#dddddd", handlelength=1.0, handletextpad=0.35,
+              labelspacing=0.22, borderpad=0.4)
 
     # ---- right: where in the spectrum does v live ----
     ax = axes[1]
-    ax.axhline(rand_rank, color=C_RAND, ls="--", lw=1.8, zorder=2,
-               label=f"random vector (≈{rand_rank:.0f})")
-    ax.plot(L, rank, "-", color=C_RANK, lw=1.6, alpha=0.5, zorder=3)
-    ax.scatter(L, rank, s=55, color=C_RANK, edgecolors="white", linewidths=1.2, zorder=4,
-               label="trained vector")
-    ax.set_xlabel("Layer", fontsize=15, labelpad=8)
-    ax.set_ylabel("PC centroid rank  (low = principal)", fontsize=13.5, labelpad=8)
-    ax.set_title("Where in the hidden spectrum does the vector live?", fontsize=13.5, pad=10)
+    ax.axhline(rand_rank, color=C_RAND, ls="--", lw=1.4, zorder=2,
+               label=f"Random vector (≈{rand_rank:.0f})")
+    ax.plot(L, rank, "-", color=C_RANK, lw=1.0, alpha=0.5, zorder=3)
+    ax.scatter(L, rank, s=24, color=C_RANK, edgecolors="white", linewidths=0.7, zorder=4,
+               label="Trained vector")
+    ax.set_xlabel("Layer", fontsize=FS_AXLABEL, labelpad=6)
+    ax.set_ylabel("PC centroid rank", fontsize=FS_AXLABEL, labelpad=6)
+    ax.set_title("Position in the Hidden Spectrum", fontsize=FS_TITLE, pad=9)
     ax.set_xlim(L.min() - 1, L.max() + 1)
     ax.invert_yaxis()   # principal (low rank) at top -> intuitive "high in spectrum"
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
-    ax.legend(loc="upper left", fontsize=11, framealpha=0.95, edgecolor="#dddddd")
+    ax.legend(loc="upper left", fontsize=FS_LEGEND, framealpha=0.95,
+              edgecolor="#dddddd", handlelength=1.0, handletextpad=0.35,
+              labelspacing=0.22, borderpad=0.4)
 
-    fig.tight_layout()
-    os.makedirs(os.path.dirname(FIG), exist_ok=True)
-    fig.savefig(FIG, bbox_inches="tight", format="svg", dpi=400)
-    print(f"[ok] saved: {FIG}")
+    save_wide(fig, FIG)
     print(f"E_top20/rand: mean={E.mean():.2f}  |  centroid rank: mean={rank.mean():.1f} (rand {rand_rank})")
 
 

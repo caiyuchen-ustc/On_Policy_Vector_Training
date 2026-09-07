@@ -14,6 +14,9 @@ Emits FOUR standalone figures (same size & fonts) that together tell:
     3. opd_pca-shift.svg     : hidden-cloud shift ‖Δμ‖/‖μ‖ vs layer
     4. opd_pca-drift.svg     : fraction of injected shift inside principal subspace
 
+Canvas/fonts come from ../opd_plots/panel_style.py (via _panel_style) so these
+four sit interchangeably next to the other panel figures in the paper.
+
 Rerun:  python make_injected_pca_figs2.py
 """
 import csv
@@ -23,6 +26,9 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+from _panel_style import (FS_AXLABEL, FS_LEGEND, FS_TITLE, PANEL_FIGSIZE,
+                          panel_rc, save_panel)
 
 _TAG = os.environ.get("MODEL_TAG", "qwen3-4b")
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -38,17 +44,11 @@ C_MIDHI = "#e08214"  # mid-high (orange) — the "beginning to differ" band
 C_HI = "#d62728"     # high     (red)
 C_REF = "#888888"
 
-FIGSIZE = (7.2, 5.2)
-
 
 def _rc():
-    plt.rcParams.update({
-        "font.size": 18, "font.family": "DejaVu Sans",
-        "axes.edgecolor": "#666666", "axes.linewidth": 1.0,
-        "axes.grid": True, "grid.color": "#ececec", "grid.linewidth": 0.9,
-        "xtick.labelsize": 13, "ytick.labelsize": 13,
-        "figure.dpi": 400, "savefig.dpi": 400,
-    })
+    # Canvas and fonts come from panel_style: FIGSIZE = (7.2, 5.2) and the local
+    # rcParams block are gone so these panels match the rest of the paper.
+    panel_rc()
 
 
 def _load():
@@ -132,65 +132,74 @@ def _scatter_by_regime(ax, L, y, big=False):
     lo = L < MIDHI_START
     mh = (L >= MIDHI_START) & (L < HI_START)
     hi = L >= HI_START
-    s = 66 if not big else 78
-    ax.plot(L, y, "-", color="#c7c7c7", lw=1.4, zorder=2)
-    ax.scatter(L[lo], y[lo], s=s, color=C_LOW, edgecolors="white", linewidths=1.2,
+    # Markers scale with the canvas: s=66 was set for a 7.2x5.2 figure, which is
+    # 2.5x the area of a panel. There are ~35 layers across a 229 pt axes, i.e.
+    # 6.5 pt per point, so s=26 (a ~5.8 pt disc) is as large as they can get
+    # without the low/mid run fusing into one band.
+    s = 26 if not big else 32
+    ax.plot(L, y, "-", color="#c7c7c7", lw=1.0, zorder=2)
+    ax.scatter(L[lo], y[lo], s=s, color=C_LOW, edgecolors="white", linewidths=0.7,
                zorder=4, label="low / mid")
-    ax.scatter(L[mh], y[mh], s=s + 6, color=C_MIDHI, edgecolors="white", linewidths=1.2,
+    ax.scatter(L[mh], y[mh], s=s + 4, color=C_MIDHI, edgecolors="white", linewidths=0.7,
                marker="s", zorder=5, label="mid-high (≥17)")
-    ax.scatter(L[hi], y[hi], s=s + 24, color=C_HI, edgecolors="white", linewidths=1.3,
+    ax.scatter(L[hi], y[hi], s=s + 10, color=C_HI, edgecolors="white", linewidths=0.8,
                marker="D", zorder=6, label="high (≥32)")
 
 
-def _save(fig, name):
-    os.makedirs(FIGDIR, exist_ok=True)
-    p = os.path.join(FIGDIR, name)
-    fig.savefig(p, bbox_inches="tight", format="svg", dpi=400)
-    print(f"[ok] saved: {p}")
-    plt.close(fig)
-
-
-def panel(key, kind, ylabel, title, ref_line, ylim=None, logy=False, name=None):
+def panel(key, kind, ylabel, title, ref_line, ylim=None, logy=False, name=None,
+          legend_loc="upper left"):
     d = _load(); L = d["layer"]; y = _enhance(L, d[key], kind)
     _rc()
-    fig, ax = plt.subplots(figsize=FIGSIZE)
+    fig, ax = plt.subplots(figsize=PANEL_FIGSIZE)
     if ref_line is not None:
-        ax.axhline(ref_line, color=C_REF, ls="--", lw=1.6, zorder=1)
+        ax.axhline(ref_line, color=C_REF, ls="--", lw=1.4, zorder=1)
     _scatter_by_regime(ax, L, y)
     if logy:
         ax.set_yscale("log")
-    ax.set_xlabel("Layer", fontsize=15, labelpad=8)
-    ax.set_ylabel(ylabel, fontsize=15, labelpad=8)
-    ax.set_title(title, fontsize=13.5, pad=10)
+    ax.set_xlabel("Layer", fontsize=FS_AXLABEL, labelpad=6)
+    ax.set_ylabel(ylabel, fontsize=FS_AXLABEL, labelpad=6)
+    ax.set_title(title, fontsize=FS_TITLE, pad=9)
     ax.set_xlim(L.min() - 1, L.max() + 1)
     if ylim:
         ax.set_ylim(*ylim)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
-    ax.legend(loc="best", fontsize=10, framealpha=0.95, edgecolor="#dddddd")
-    fig.tight_layout()
-    _save(fig, name)
+    # Not loc="best": it re-solves per figure, so the four panels ended up with
+    # the legend in four different corners even though they share an x axis.
+    # Three rise toward the top layers -> upper left is free; `overlap` falls
+    # instead, so it passes lower left.
+    ax.legend(loc=legend_loc, fontsize=FS_LEGEND, framealpha=0.95,
+              edgecolor="#dddddd", handlelength=1.0, handletextpad=0.35,
+              labelspacing=0.22, borderpad=0.4)
+    save_panel(fig, os.path.join(FIGDIR, name))
+    plt.close(fig)
 
 
 def main():
+    # Titles are terse because there is no tight bbox to absorb an overlong one
+    # and the plot area is only 229 pt: the old wording ran 276-333 pt, i.e. the
+    # title was wider than the axes it labelled. "across Layers" is dropped from
+    # all four -- the x axis already says Layer. Widest now is 159 pt.
+    # Y labels are held under the 148 pt axis HEIGHT for the same reason.
     panel("subspace_overlap", "overlap",
-          "Top-20 PC subspace overlap",
-          "Stability of the Principal Subspace across Layers",
-          ref_line=1.0, ylim=(0.86, 1.005), name="opd_pca-overlap.svg")
+          "Subspace overlap",
+          "Principal Subspace Stability",
+          ref_line=1.0, ylim=(0.86, 1.005), name="opd_pca-overlap.svg",
+          legend_loc="lower left")
 
     panel("lambda_ratio_topk", "lambda",
-          "Variance-spectrum ratio  λ'/λ",
-          "Change in the Variance Spectrum across Layers",
+          "Spectrum ratio  λ'/λ",
+          "Variance Spectrum Change",
           ref_line=1.0, ylim=(0.99, 1.02), name="opd_pca-lambda.svg")
 
     panel("hidden_shift_rel", "shift",
-          "Hidden-cloud shift  ‖Δμ‖ / ‖μ‖",
-          "Displacement of the Hidden State across Layers",
+          "Shift  ‖Δμ‖ / ‖μ‖",
+          "Hidden-State Displacement",
           ref_line=0.0, name="opd_pca-shift.svg")
 
     panel("drift_in_topk", "drift",
-          "Drift–principal-subspace overlap",
-          "Overlap of Injected Drift with Principal Axes across Layers",
+          "Drift in top-20 PCs",
+          "Drift vs. Principal Axes",
           ref_line=float(_load()["drift_rand_baseline"][0]), logy=True,
           name="opd_pca-drift.svg")
 

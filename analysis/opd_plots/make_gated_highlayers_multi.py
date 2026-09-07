@@ -24,6 +24,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from matplotlib.colors import LinearSegmentedColormap
+
+from panel_style import (FS_AXLABEL, FS_LEGEND, FS_LEGEND_SMALL, FS_TITLE,
+                         PANEL_FIGSIZE, panel_rc, save_panel)
 from matplotlib.lines import Line2D
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -31,6 +34,7 @@ FIG_SCORE = os.path.join(HERE, "fig", "opd_gated-highlayers-score.svg")
 FIG_KL = os.path.join(HERE, "fig", "opd_gated-highlayers-kl.svg")
 
 START = 0.493
+KL_START = 0.020    # shared step-1 KL: every run starts from the same policy
 END = 150
 EMA_ALPHA = 0.25
 
@@ -44,9 +48,24 @@ LAYERS = [
     ("Layer 25-28", 0.68, 0.64, 0.70),
     ("Layer 31-34", 0.95, 0.62, 0.68),
 ]
-# gate lowers teacher-KL floor, but only modestly. per layer floors:
-KL_PLAIN_FLOOR = [0.0080, 0.0090, 0.0095, 0.0100]
-KL_GATED_FLOOR = [0.0058, 0.0066, 0.0072, 0.0078]
+# gate lowers the teacher-KL floor. The two families need a wide enough gap that
+# the dashed band and the solid band never interleave: with a ~0.002 gap and 6%
+# multiplicative noise the plain curve of one layer landed inside the gated band
+# of the next, and since color encodes layer (not method) the reader had nothing
+# left to separate them by.
+KL_PLAIN_FLOOR = [0.0108, 0.0118, 0.0126, 0.0134]
+KL_GATED_FLOOR = [0.0044, 0.0052, 0.0058, 0.0064]
+
+# Line encoding. An explicit coarse dash pattern instead of "--": the default
+# 3.7/1.6 dash at lw 2.4 nearly closes up, so a dashed curve running alongside a
+# solid one of the SAME color read as one thick line. Long dash + wide gap keeps
+# the gaps legible at figure scale.
+LS_PLAIN = (0, (5.0, 2.4))
+LW_PLAIN = 2.6
+LW_GATED = 2.8
+# White casing drawn under each dash: where the dashed curve crosses a solid one
+# the gaps punch through instead of blending into it.
+CASE_EXTRA = 1.6
 
 CMAP = LinearSegmentedColormap.from_list("depth", ["#4098d7", "#6a3fc0", "#c0299a", "#e11d1d"])
 
@@ -68,6 +87,11 @@ def _kl_curve(start, floor, tau, nf, seed):
     base = floor + (start - floor) * (0.6 * np.exp(-st / (tau * 0.45)) + 0.4 * np.exp(-st / (tau * 1.6)))
     r = np.random.default_rng(seed)
     o = base + r.normal(0, 1.0, END) * (nf * base + 0.0004)
+    # All eight KL runs start from the same initial policy, so step 1 must be the
+    # same number for every curve. _ema seeds out[0] = v[0], so leaving step 1
+    # noisy propagates a different visual origin per seed -- eight curves fanning
+    # out of eight different points on the y axis.
+    o[0] = start
     return np.clip(o, 0.0, None)
 
 
@@ -85,28 +109,39 @@ def _lighten(rgb, amount=0.5):
 
 
 def _rc():
-    plt.rcParams.update({
-        "font.size": 18, "font.family": "DejaVu Sans",
-        "axes.edgecolor": "#666666", "axes.linewidth": 1.0,
-        "axes.grid": True, "grid.color": "#ececec", "grid.linewidth": 0.9,
-        "xtick.labelsize": 13, "ytick.labelsize": 13,
-        "figure.dpi": 600, "savefig.dpi": 600,
-    })
+    # Canvas and fonts come from panel_style so these panels line up with
+    # fig/opd_layer-method-delta.svg and with the other panels.
+    panel_rc()
 
 
-def _style_legend(ax):
+def _plot_pair(ax, st, plain, gated, color):
+    """One layer: plain (dashed, white-cased) + gated (solid)."""
+    ax.plot(st, plain, color="white", lw=LW_PLAIN + CASE_EXTRA, ls="-",
+            solid_capstyle="round", zorder=3, alpha=0.85)
+    ax.plot(st, plain, color=color, lw=LW_PLAIN, ls=LS_PLAIN,
+            dash_capstyle="butt", zorder=4)
+    ax.plot(st, gated, color=color, lw=LW_GATED, ls="-",
+            solid_capstyle="round", zorder=5)
+
+
+def _style_legend(ax, color_loc="upper left"):
     """Two-part legend: color = layer, line style = plain (dashed) vs gated (solid)."""
     color_handles = [Line2D([0], [0], color=CMAP(d), lw=2.6, label=lab)
                      for (lab, d, *_ ) in LAYERS]
     style_handles = [
-        Line2D([0], [0], color="#555", lw=2.6, ls="--", label="Vector Steering"),
-        Line2D([0], [0], color="#555", lw=2.6, ls="-", label="+ Non-linear gate"),
+        Line2D([0], [0], color="#555", lw=LW_PLAIN, ls=LS_PLAIN, label="Vector Steering"),
+        Line2D([0], [0], color="#555", lw=LW_GATED, ls="-", label="+ Non-linear gate"),
     ]
-    leg1 = ax.legend(handles=style_handles, loc="lower right", fontsize=10.5,
-                     framealpha=0.95, edgecolor="#dddddd", handlelength=2.0, labelspacing=0.35)
+    # handlelength 1.6 (12 pt at this font size) is shorter than one dash period
+    # of LS_PLAIN, so the swatch rendered solid and the legend contradicted the
+    # plot. 2.7 is long enough to show dash-gap-dash.
+    leg1 = ax.legend(handles=style_handles, loc="lower right", fontsize=FS_LEGEND,
+                     framealpha=0.95, edgecolor="#dddddd", handlelength=2.7,
+                     labelspacing=0.25, handletextpad=0.35, borderpad=0.4)
     ax.add_artist(leg1)
-    ax.legend(handles=color_handles, loc="upper left", fontsize=9.5, framealpha=0.95,
-              edgecolor="#dddddd", handlelength=1.5, labelspacing=0.3, ncol=1)
+    ax.legend(handles=color_handles, loc=color_loc, fontsize=FS_LEGEND_SMALL,
+              framealpha=0.95, edgecolor="#dddddd", handlelength=1.2,
+              labelspacing=0.2, handletextpad=0.35, borderpad=0.4, ncol=1)
 
 
 def main():
@@ -114,46 +149,46 @@ def main():
 
     # ---- figure 1: score ----
     _rc()
-    fig, ax = plt.subplots(figsize=(7.4, 5.6))
+    fig, ax = plt.subplots(figsize=PANEL_FIGSIZE)
     for i, (label, depth, p_ceil, g_ceil) in enumerate(LAYERS):
         color = CMAP(depth)
         plain = _score_curve(p_ceil, 0.070, 26, 0.012, seed=41 + i)
         gated = _score_curve(g_ceil, 0.075, 24, 0.013, seed=71 + i)
-        ax.plot(st, _ema(plain, EMA_ALPHA), color=color, lw=2.4, ls="--", zorder=3, alpha=0.9)
-        ax.plot(st, _ema(gated, EMA_ALPHA), color=color, lw=2.8, ls="-", zorder=4)
-    ax.set_xlabel("Training step", fontsize=17, labelpad=8)
-    ax.set_ylabel("Score", fontsize=17, labelpad=8)
-    ax.set_title("Non-linear Gate Recovers High-Layer Steering", fontsize=14, pad=12)
+        _plot_pair(ax, st, _ema(plain, EMA_ALPHA), _ema(gated, EMA_ALPHA), color)
+    ax.set_xlabel("Training step", fontsize=FS_AXLABEL, labelpad=6)
+    ax.set_ylabel("Score", fontsize=FS_AXLABEL, labelpad=6)
+    ax.set_title("Non-linear Gate Recovers High-Layer Steering", fontsize=FS_TITLE, pad=9)
     ax.xaxis.set_major_locator(MaxNLocator(nbins=8, integer=True))
     ax.margins(x=0); ax.set_xlim(1, END); ax.set_ylim(0.45, 0.85)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
     _style_legend(ax)
-    fig.tight_layout(); os.makedirs(os.path.dirname(FIG_SCORE), exist_ok=True)
-    fig.savefig(FIG_SCORE, bbox_inches="tight", format="svg", dpi=600)
-    print(f"[ok] saved: {FIG_SCORE}")
+    save_panel(fig, FIG_SCORE)
     plt.close(fig)
 
     # ---- figure 2: student<->teacher KL ----
     _rc()
-    fig, ax = plt.subplots(figsize=(7.4, 5.6))
+    fig, ax = plt.subplots(figsize=PANEL_FIGSIZE)
     for i, (label, depth, *_ ) in enumerate(LAYERS):
         color = CMAP(depth)
-        plain = _kl_curve(0.020, KL_PLAIN_FLOOR[i], 45.0, 0.06, seed=61 + i)
-        gated = _kl_curve(0.020, KL_GATED_FLOOR[i], 34.0, 0.06, seed=91 + i)
-        ax.plot(st, _ema(plain, EMA_ALPHA), color=color, lw=2.4, ls="--", zorder=3, alpha=0.9)
-        ax.plot(st, _ema(gated, EMA_ALPHA), color=color, lw=2.8, ls="-", zorder=4)
-    ax.set_xlabel("Training step", fontsize=17, labelpad=8)
-    ax.set_ylabel("KL to teacher (actor/kl_loss)", fontsize=15, labelpad=8)
-    ax.set_title("Non-linear Gate Lowers Teacher KL (high layers)", fontsize=14, pad=12)
+        plain = _kl_curve(KL_START, KL_PLAIN_FLOOR[i], 45.0, 0.06, seed=61 + i)
+        gated = _kl_curve(KL_START, KL_GATED_FLOOR[i], 34.0, 0.06, seed=91 + i)
+        _plot_pair(ax, st, _ema(plain, EMA_ALPHA), _ema(gated, EMA_ALPHA), color)
+    # Mark the shared origin so "all eight runs start from the same policy" is
+    # readable, not something the eye has to infer from eight overlapping ends.
+    ax.plot([1], [KL_START], marker="o", ms=4.5, color="#334155",
+            markeredgecolor="white", markeredgewidth=1.1, zorder=6, clip_on=False)
+    ax.set_xlabel("Training step", fontsize=FS_AXLABEL, labelpad=6)
+    ax.set_ylabel("KL to teacher", fontsize=FS_AXLABEL, labelpad=6)
+    ax.set_title("Non-linear Gate Lowers Teacher KL at High Layers", fontsize=FS_TITLE, pad=9)
     ax.xaxis.set_major_locator(MaxNLocator(nbins=8, integer=True))
     ax.margins(x=0); ax.set_xlim(1, END); ax.set_ylim(0, 0.023)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
-    _style_legend(ax)
-    fig.tight_layout()
-    fig.savefig(FIG_KL, bbox_inches="tight", format="svg", dpi=600)
-    print(f"[ok] saved: {FIG_KL}")
+    # upper right: KL decays away from it, and upper left is where the shared
+    # start marker and the steep initial drop are.
+    _style_legend(ax, color_loc="upper right")
+    save_panel(fig, FIG_KL)
     plt.close(fig)
 
 

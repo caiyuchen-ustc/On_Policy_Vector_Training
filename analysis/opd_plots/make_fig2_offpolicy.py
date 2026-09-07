@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Fig2: off-policy distillation, 9 curves = 3 teachers (RL / SFT / Off-distribution)
+Fig2: off-policy distillation, 9 curves = 3 trace sources (own RL rollouts /
+Qwen3-8B, near / QwQ-32B, far)
 x 3 methods (Full-param / LoRA / Vector Steering) on MATH500.
 
 Color = method (blue=Full-param, red=LoRA, green=Vector Steering).
@@ -21,20 +22,58 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from matplotlib.ticker import MaxNLocator
+
+from panel_style import (CURVE_RAW_ALPHA, CURVE_RAW_LW, CURVE_SMOOTH_LW,
+                         FS_LEGEND, FS_LEGEND_SMALL, PANEL_FIGSIZE,
+                         curve_panel_rc, save_panel, style_curve_axes)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "fig", "opd_math500-offpolicy9.svg")
 
 START = 0.65
 END = 150
-TITLE = "Off-Policy Distillation across Teachers & Methods on MATH500"
+# Terse, like the other panel titles: the old wording ran 293 pt against a
+# 353 pt canvas whose plot area is only 229 pt. The two factors are named by the
+# two legends instead.
+# "Trace Source", matching the legend; see the TEACHER_LABEL comment. 173 pt.
+TITLE = "Trace Source × Method · MATH500"
 EMA_ALPHA = 0.2
 
+# Encoding: COLOR = method, LINE STYLE = teacher. Nine "Vector Steering ·
+# Off-distribution"-style labels needed 121 pt each -- three columns would not
+# fit the 229 pt axes. Factoring the 3x3 design into two short legends does.
+# Previously all three teachers shared ls="-" and were told apart by shade of
+# the same hue, which put nine similar solid lines on one plot.
 METHOD_COLOR = {"Full-param": "#1f77b4", "LoRA": "#d62728", "Vector Steering": "#2ca02c"}
-TEACHER_STYLE = {"RL": "-", "SFT": "-", "Off-distribution": "-"}
-# same-family shades per method: RL=dark, SFT=mid, Off-distribution=light
-TEACHER_SHADE = {"RL": 0.0, "SFT": 0.32, "Off-distribution": 0.72}
+TEACHER_STYLE = {"RL": "-", "SFT": (0, (5.0, 2.4)), "Off-distribution": (0, (1.6, 1.9))}
+# No per-teacher shading any more: the line style carries the teacher, so
+# lightening on top of it was redundant, and at 0.72 the Off-distribution curves
+# faded to near-invisible while the legend swatch stayed the saturated base
+# colour -- the legend was describing a colour that appeared nowhere on the plot.
+TEACHER_SHADE = {"RL": 0.0, "SFT": 0.0, "Off-distribution": 0.0}
+
+# LEGEND WORDING -- "SFT" vs "Off-distribution" measured two different things (a
+# training objective vs a distributional distance), so a reader could not tell
+# what this figure varies. Both non-RL conditions are the same kind of supervision
+# (fixed traces from another model's corpus); only the generator, and hence the
+# distance from the student, differs:
+#
+#   key               corpus                       generator     distance
+#   RL                the student's own rollouts   (self)        zero
+#   SFT               Math-CoT-44K                 Qwen3-8B      near: same family
+#   Off-distribution  OpenMathReasoning            QwQ-32B       far: different family
+#
+# Keys stay short (they index CONFIG); the legend shows the generator plus a
+# near/far tag, giving one axis the reader can order. Widest entry is 93 pt of the
+# 229 pt axes at handlelength=2.7. Must match make_repscope_data.py's
+# TEACHER_LABEL -- the two figures are read together.
+TEACHER_LABEL = {
+    "RL": "own RL rollouts",
+    "SFT": "Qwen3-8B (near)",
+    "Off-distribution": "QwQ-32B (far)",
+}
 
 # (method, teacher, shape, params, seed, noise)
 #   rise:  ceil,x0,k,knee[,late_noise,late_from]
@@ -113,30 +152,39 @@ def _shade(hex_color, amt):
 
 def main():
     st = np.arange(1, END + 1, dtype=float)
-    plt.rcParams.update({"font.size": 18, "font.family": "DejaVu Sans", "axes.grid": True,
-                         "grid.color": "#dddddd", "grid.linewidth": 0.8,
-                         "xtick.labelsize": 13, "ytick.labelsize": 13,
-                         "figure.dpi": 600, "savefig.dpi": 600})
-    fig, ax = plt.subplots(figsize=(7, 5.5))
+    # Canvas and fonts come from panel_style so this figure matches the other
+    # score-curve panels.
+    curve_panel_rc()
+    fig, ax = plt.subplots(figsize=PANEL_FIGSIZE)
     for method, teacher, shape, params, seed, noise in CONFIG:
         sc = make_curve(shape, params, seed, noise, st)
         color = _shade(METHOD_COLOR[method], TEACHER_SHADE[teacher]); ls = TEACHER_STYLE[teacher]
-        ax.plot(st, sc, color=_lighten(color, 0.5), lw=1.0, alpha=0.22, ls=ls, zorder=2)
-        ax.plot(st, ema(sc, EMA_ALPHA), color=color, lw=2.3, ls=ls, zorder=3,
-                label=f"{method} · {teacher}")
-    ax.set_xlabel("Training step", fontsize=17, labelpad=8)
-    ax.set_ylabel("Accuracy", fontsize=17, labelpad=8)
-    ax.set_title(TITLE, fontsize=16, pad=12)
+        ax.plot(st, sc, color=_lighten(color, 0.5), lw=CURVE_RAW_LW, alpha=CURVE_RAW_ALPHA,
+                ls=ls, zorder=2)
+        ax.plot(st, ema(sc, EMA_ALPHA), color=color, lw=CURVE_SMOOTH_LW, ls=ls, zorder=3)
+    style_curve_axes(ax, TITLE)
     ax.xaxis.set_major_locator(MaxNLocator(nbins=8, integer=True))
     ax.margins(x=0); ax.set_xlim(st.min(), st.max())
     ax.set_ylim(0, 0.92)
-    ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-    ax.legend(loc="lower right", fontsize=8, ncol=3, framealpha=0.9, edgecolor="#cccccc",
-              handlelength=1.6, handletextpad=0.4, labelspacing=0.3, columnspacing=0.9)
-    fig.tight_layout()
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    fig.savefig(OUT, bbox_inches="tight", format="svg", dpi=600)
-    print(f"[ok] saved: {OUT}")
+
+    # Two short legends beat nine long ones: see the METHOD_COLOR comment.
+    style_handles = [Line2D([0], [0], color="#555", lw=CURVE_SMOOTH_LW, ls=ls,
+                            label=TEACHER_LABEL[t])
+                     for t, ls in TEACHER_STYLE.items()]
+    color_handles = [Line2D([0], [0], color=c, lw=CURVE_SMOOTH_LW, label=m)
+                     for m, c in METHOD_COLOR.items()]
+    # "Trace source", not "Teacher": all three rows learn from traces, and the
+    # varied axis is which model produced them. See the TEACHER_LABEL comment.
+    leg1 = ax.legend(handles=style_handles, title="Trace source", loc="lower left",
+                     fontsize=FS_LEGEND, title_fontsize=FS_LEGEND, framealpha=0.95,
+                     edgecolor="#dddddd", handlelength=2.7, handletextpad=0.35,
+                     labelspacing=0.25, borderpad=0.4)
+    leg1._legend_box.align = "left"
+    ax.add_artist(leg1)
+    ax.legend(handles=color_handles, loc="lower right", fontsize=FS_LEGEND_SMALL,
+              framealpha=0.95, edgecolor="#dddddd", handlelength=1.2,
+              handletextpad=0.35, labelspacing=0.2, borderpad=0.4)
+    save_panel(fig, OUT)
     # summary
     for method, teacher, shape, params, seed, noise in CONFIG:
         sc = make_curve(shape, params, seed, noise, st)

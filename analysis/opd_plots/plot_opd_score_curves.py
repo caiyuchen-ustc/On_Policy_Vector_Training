@@ -36,6 +36,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MaxNLocator
 
+from panel_style import (CURVE_RAW_ALPHA, CURVE_RAW_LW, CURVE_SMOOTH_LW,
+                        CURVE_TEACHER_LW, PANEL_FIGSIZE, curve_legend,
+                        curve_panel_rc, save_panel, style_curve_axes)
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # ----------------------------------------------------------------------------
@@ -53,9 +57,11 @@ EMA_ALPHA = 0.2          # smoothing strength: smaller = smoother (0.05~0.2 typi
 #   "strict" : max(EMA, running_max_of_raw) — monotonically non-decreasing (step-like).
 #   "none"   : plain EMA.
 PEAK_MODE = "none"
-RAW_ALPHA = 0.28         # opacity of the light raw line
-RAW_LW = 1.2             # raw line width
-SMOOTH_LW = 2.6          # smoothed line width
+# Line widths come from panel_style: they are tuned for the panel canvas,
+# where 2.6 pt reads much heavier than it did on the old 7x5.5 figure.
+RAW_ALPHA = CURVE_RAW_ALPHA
+RAW_LW = CURVE_RAW_LW
+SMOOTH_LW = CURVE_SMOOTH_LW
 
 # A clean, high-contrast palette (dark = smoothed, light = raw is the same hue lightened).
 COLORS = {
@@ -142,21 +148,11 @@ def main():
     smooth_tag = f"ema{EMA_ALPHA:g}" if PEAK_MODE == "none" else f"{PEAK_MODE}-ema{EMA_ALPHA:g}"
     out_path = os.path.join(HERE, "fig", f"opd_{model}_{smooth_tag}.svg")
 
-    plt.rcParams.update({
-        "font.size": 18,
-        "font.family": "DejaVu Sans",
-        "axes.edgecolor": "#444444",
-        "axes.linewidth": 1.1,
-        "axes.grid": True,
-        "grid.color": "#dddddd",
-        "grid.linewidth": 0.8,
-        "xtick.labelsize": 13,
-        "ytick.labelsize": 13,
-        "figure.dpi": 600,
-        "savefig.dpi": 600,
-    })
+    # Canvas and fonts come from panel_style so all eight score-curve figures
+    # (4 on-policy here + 4 off-policy) are interchangeable in the paper.
+    curve_panel_rc()
 
-    fig, ax = plt.subplots(figsize=(7, 5.5))
+    fig, ax = plt.subplots(figsize=PANEL_FIGSIZE)
 
     any_data = False
     all_steps = []
@@ -183,28 +179,17 @@ def main():
         raise SystemExit(f"[error] no usable data in data_{model}.json")
 
     if teacher_score is not None:
-        ax.axhline(teacher_score, color="#666666", ls="--", lw=1.8, zorder=1, label="RL Teacher")
+        ax.axhline(teacher_score, color="#666666", ls="--", lw=CURVE_TEACHER_LW, zorder=1, label="RL Teacher")
 
-    ax.set_xlabel("Training step", fontsize=17, labelpad=8)
-    ax.set_ylabel("Score", fontsize=17, labelpad=8)
-    ax.set_title(title, fontsize=16, pad=12)
+    style_curve_axes(ax, title, ylabel="Score")
     ax.xaxis.set_major_locator(MaxNLocator(nbins=8, integer=True))
     ax.margins(x=0)
     if all_steps:
         ax.set_xlim(left=min(all_steps), right=max(all_steps))
 
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+    curve_legend(ax)
 
-    leg = ax.legend(loc="lower right", frameon=True, fancybox=True, framealpha=0.9,
-                    edgecolor="#cccccc", fontsize=11, handlelength=1.5, handletextpad=0.5,
-                    labelspacing=0.35, borderpad=0.4, columnspacing=1.0)
-    leg.get_frame().set_linewidth(0.8)
-
-    fig.tight_layout()
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    fig.savefig(out_path, bbox_inches="tight", format="svg", dpi=600)
-    print(f"[ok] model={model}  ->  {out_path}")
+    save_panel(fig, out_path)
 
 
 if __name__ == "__main__":

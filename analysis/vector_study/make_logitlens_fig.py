@@ -17,6 +17,8 @@ Reading:
 So high-layer steering is direct token manipulation; mid/low steering is a
 distributed computational pattern.
 
+Canvas/fonts come from ../opd_plots/panel_style.py (via _panel_style).
+
 Rerun:  python make_logitlens_fig.py
 Output: figs/opd_logitlens-entropy.svg
 """
@@ -27,6 +29,9 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+from _panel_style import (FS_AXLABEL, FS_LEGEND, FS_TITLE, PANEL_FIGSIZE,
+                          panel_rc, save_panel)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CSV = os.path.join(HERE, "out", "logitlens_qwen3-4b.csv")
@@ -43,13 +48,8 @@ ANNOT = {
 
 
 def _rc():
-    plt.rcParams.update({
-        "font.size": 18, "font.family": "DejaVu Sans",
-        "axes.edgecolor": "#666666", "axes.linewidth": 1.0,
-        "axes.grid": True, "grid.color": "#ececec", "grid.linewidth": 0.9,
-        "xtick.labelsize": 13, "ytick.labelsize": 13,
-        "figure.dpi": 400, "savefig.dpi": 400,
-    })
+    # Canvas and fonts come from panel_style so this panel matches the rest.
+    panel_rc()
 
 
 def main():
@@ -74,40 +74,46 @@ def main():
         ne[hb] = np.clip(ramp, 0.18, RAND)
 
     _rc()
-    fig, ax = plt.subplots(figsize=(7.8, 5.4))
+    fig, ax = plt.subplots(figsize=PANEL_FIGSIZE)
 
     # baseline band = "diffuse / random-like"
     ax.axhspan(RAND - 0.006, 1.0, color="#eef3fb", alpha=0.9, zorder=0)
-    ax.axhline(RAND, color="#888", ls="--", lw=1.6, zorder=2, label="random vector (diffuse)")
+    ax.axhline(RAND, color="#888", ls="--", lw=1.4, zorder=2, label="Random vector (diffuse)")
 
+    # Markers and line widths scale with the canvas: 35 layers over a 229 pt axes
+    # leaves 6.5 pt per point, so s=58 fused the low/mid run into a solid band.
     lo = L < HI_START
-    ax.plot(L, ne, "-", color="#c9a0a0", lw=1.6, alpha=0.6, zorder=3)
-    ax.scatter(L[lo], ne[lo], s=58, color="#7f7f7f", edgecolors="white", linewidths=1.1,
-               zorder=4, label="low / mid  (diffuse mode)")
-    ax.scatter(L[~lo], ne[~lo], s=92, color="#d62728", edgecolors="white", linewidths=1.3,
-               marker="D", zorder=5, label="high layers  (peaked on tokens)")
+    ax.plot(L, ne, "-", color="#c9a0a0", lw=1.0, alpha=0.6, zorder=3)
+    ax.scatter(L[lo], ne[lo], s=24, color="#7f7f7f", edgecolors="white", linewidths=0.7,
+               zorder=4, label="Low / mid  (diffuse)")
+    ax.scatter(L[~lo], ne[~lo], s=34, color="#d62728", edgecolors="white", linewidths=0.8,
+               marker="D", zorder=5, label="High  (peaked on tokens)")
 
     # annotations
-    ax.annotate("maps to gibberish\n(no specific token)", xy=(6, best[6]), xytext=(7, 0.72),
-                fontsize=10, color="#555", ha="center",
-                arrowprops=dict(arrowstyle="-|>", color="#999", lw=1.2))
-    ax.annotate("collapses onto\nreflection words:\nWait · But · Perhaps", xy=(34, ne[-1]),
-                xytext=(27, 0.42), fontsize=10.5, color="#b02020", ha="center",
-                arrowprops=dict(arrowstyle="-|>", color="#d62728", lw=1.4))
+    # Annotations are trimmed to fit the panel: at fontsize 10 the old three-line
+    # callout was 96 pt wide on a 229 pt axes and collided with the legend.
+    ax.annotate("gibberish\n(no token)", xy=(6, best[6]), xytext=(8.5, 0.70),
+                fontsize=FS_LEGEND, color="#555", ha="center",
+                arrowprops=dict(arrowstyle="-|>", color="#999", lw=0.9))
+    ax.annotate("collapses onto\nWait · But · Perhaps", xy=(34, ne[-1]),
+                xytext=(26, 0.40), fontsize=FS_LEGEND, color="#b02020", ha="center",
+                arrowprops=dict(arrowstyle="-|>", color="#d62728", lw=1.0))
 
-    ax.set_xlabel("Layer", fontsize=15, labelpad=8)
-    ax.set_ylabel("Normalized entropy of vocab projection", fontsize=13.5, labelpad=8)
-    ax.set_title("Logit Lens: High-Layer Vectors Collapse onto Specific Tokens", fontsize=13, pad=10)
+    ax.set_xlabel("Layer", fontsize=FS_AXLABEL, labelpad=6)
+    # Held under the 148 pt axis height; the old label was 247 pt.
+    ax.set_ylabel("Normalized vocab entropy", fontsize=FS_AXLABEL, labelpad=6)
+    # The old title was 348 pt on a 353 pt canvas whose plot area is 229 pt -- it
+    # only just fit the canvas and was half again wider than the axes. The
+    # "collapses onto specific tokens" finding is now the in-plot annotation.
+    ax.set_title("Logit Lens: Vector to Vocabulary", fontsize=FS_TITLE, pad=9)
     ax.set_xlim(L.min() - 1, L.max() + 1)
     ax.set_ylim(0.15, 1.0)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
-    ax.legend(loc="lower left", fontsize=10, framealpha=0.95, edgecolor="#dddddd")
-
-    fig.tight_layout()
-    os.makedirs(os.path.dirname(FIG), exist_ok=True)
-    fig.savefig(FIG, bbox_inches="tight", format="svg", dpi=400)
-    print(f"[ok] saved: {FIG}")
+    ax.legend(loc="lower left", fontsize=FS_LEGEND, framealpha=0.95,
+              edgecolor="#dddddd", handlelength=1.0, handletextpad=0.35,
+              labelspacing=0.22, borderpad=0.4)
+    save_panel(fig, FIG)
 
 
 if __name__ == "__main__":

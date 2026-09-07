@@ -1,6 +1,6 @@
 {
  "meta": {
-  "title": "Off-Policy Distillation on LiveCodeBench with Qwen3-8B",
+  "title": "LiveCodeBench \u00b7 Qwen3-8B",
   "teacher_score": 0.88,
   "val_metric": "val-core/livecodebench/acc/mean@4"
  },

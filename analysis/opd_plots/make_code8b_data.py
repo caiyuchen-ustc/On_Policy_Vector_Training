@@ -26,13 +26,20 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
+from panel_style import (CURVE_RAW_ALPHA, CURVE_RAW_LW, CURVE_SMOOTH_LW,
+                        CURVE_TEACHER_LW, PANEL_FIGSIZE, curve_legend,
+                        curve_panel_rc, save_panel, style_curve_axes)
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "data_livecodebench-8b-offpolicy.json")
 FIG = os.path.join(HERE, "fig", "opd_livecodebench-8b-offpolicy.svg")
 
 END = 200               # x-axis 1..END
 EMA_ALPHA = 0.2
-TITLE = "Off-Policy Distillation on LiveCodeBench with Qwen3-8B"
+# Panel titles are deliberately terse ("<benchmark> · <model>"): the full
+# sentence ran 320 pt on a 353 pt canvas, i.e. the title alone was wider than
+# the plot it sat above. On-policy vs off-policy belongs in the LaTeX caption.
+TITLE = "LiveCodeBench · Qwen3-8B"
 VAL_METRIC = "val-core/livecodebench/acc/mean@4"
 
 COLORS = {
@@ -109,36 +116,24 @@ def main():
         s = np.asarray(series["scores"], float)
         print(f"{label:15s} start {s[0]:.3f}  mean {s.mean():.3f}  std {s.std():.3f}  end10 {s[-10:].mean():.3f}")
 
-    plt.rcParams.update({
-        "font.size": 18, "font.family": "DejaVu Sans",
-        "axes.edgecolor": "#444444", "axes.linewidth": 1.1,
-        "axes.grid": True, "grid.color": "#dddddd", "grid.linewidth": 0.8,
-        "xtick.labelsize": 13, "ytick.labelsize": 13,
-        "figure.dpi": 600, "savefig.dpi": 600,
-    })
-    fig, ax = plt.subplots(figsize=(7, 5.5))
+    # Canvas and fonts come from panel_style so this figure is interchangeable
+    # with the other score-curve panels in the paper.
+    curve_panel_rc()
+    fig, ax = plt.subplots(figsize=PANEL_FIGSIZE)
     for label, series in data.items():
         sc = np.asarray(series["scores"], float)
         dark = COLORS[label]; light = _lighten(dark, 0.55)
-        ax.plot(st, sc, color=light, lw=1.2, alpha=0.30, zorder=2, solid_capstyle="round")
-        ax.plot(st, _ema(sc, EMA_ALPHA), color=dark, lw=2.6, zorder=3, label=label,
+        ax.plot(st, sc, color=light, lw=CURVE_RAW_LW, alpha=CURVE_RAW_ALPHA, zorder=2,
+                solid_capstyle="round")
+        ax.plot(st, _ema(sc, EMA_ALPHA), color=dark, lw=CURVE_SMOOTH_LW, zorder=3, label=label,
                 solid_capstyle="round", solid_joinstyle="round")
-    ax.axhline(0.88, color="#666666", ls="--", lw=1.8, zorder=1, label="Teacher")
-    ax.set_xlabel("Training step", fontsize=17, labelpad=8)
-    ax.set_ylabel("Accuracy", fontsize=17, labelpad=8)
-    ax.set_title(TITLE, fontsize=16, pad=12)
+    ax.axhline(0.88, color="#666666", ls="--", lw=CURVE_TEACHER_LW, zorder=1, label="Teacher")
+    style_curve_axes(ax, TITLE)
     ax.xaxis.set_major_locator(MaxNLocator(nbins=8, integer=True))
     ax.margins(x=0); ax.set_xlim(st.min(), st.max())
     ax.set_ylim(0.40, 0.95)
-    ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-    leg = ax.legend(loc="lower right", frameon=True, fancybox=True, framealpha=0.9,
-                    edgecolor="#cccccc", fontsize=11, handlelength=1.6, handletextpad=0.5,
-                    labelspacing=0.35, borderpad=0.4, columnspacing=1.0)
-    leg.get_frame().set_linewidth(0.8)
-    fig.tight_layout()
-    os.makedirs(os.path.dirname(FIG), exist_ok=True)
-    fig.savefig(FIG, bbox_inches="tight", format="svg", dpi=600)
-    print(f"[ok] saved: {FIG}")
+    curve_legend(ax)
+    save_panel(fig, FIG)
 
 
 if __name__ == "__main__":

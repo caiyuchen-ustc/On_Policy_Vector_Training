@@ -15,7 +15,10 @@ it stays down at the plain-vector level -> what matters is the input-dependent
 non-linearity, not the extra parameters.
 
 Rerun:  python make_gate_ablations.py
-Output: fig/opd_gate-capacity-ladder.svg
+Output: fig/opd_gate-capacity-ladder.svg, fig/opd_gate-activation-dist.svg
+
+Canvas/fonts come from panel_style.py so both panels sit next to
+fig/opd_layer-method-delta.svg in the same figure block.
 """
 
 import os
@@ -25,10 +28,15 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from panel_style import (FS_AXLABEL, FS_LEGEND, FS_LEGEND_SMALL, FS_TITLE,
+                         PANEL_FIGSIZE, panel_rc, save_panel)
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIG_B = os.path.join(HERE, "fig", "opd_gate-capacity-ladder.svg")
 FIG_C = os.path.join(HERE, "fig", "opd_gate-activation-dist.svg")
 
+# Layers 25-28 = BANDS["Mid-High"] in make_layer_method_delta.py, whose vector
+# cell is 0.64 -- the same number as B_POINTS[0] below. Keep them equal.
 LAYER = "high layer 25-28"
 
 # ---- non-linearity capacity ladder ----
@@ -56,13 +64,9 @@ CONTROL = ("+ input-indep vector", 2 * D_MODEL, 0.615)
 
 
 def _rc():
-    plt.rcParams.update({
-        "font.size": 18, "font.family": "DejaVu Sans",
-        "axes.edgecolor": "#666666", "axes.linewidth": 1.0,
-        "axes.grid": True, "grid.color": "#ececec", "grid.linewidth": 0.9,
-        "xtick.labelsize": 12, "ytick.labelsize": 13,
-        "figure.dpi": 400, "savefig.dpi": 400,
-    })
+    # Canvas and fonts come from panel_style so these two panels line up with
+    # fig/opd_layer-method-delta.svg and with the other sublayer panels.
+    panel_rc()
 
 
 def _fmt_params(n):
@@ -80,7 +84,7 @@ def fig_b():
     from matplotlib.cm import ScalarMappable
     from matplotlib.colors import Normalize, LinearSegmentedColormap
 
-    fig, ax = plt.subplots(figsize=(7.6, 5.5))
+    fig, ax = plt.subplots(figsize=PANEL_FIGSIZE)
     xs = np.array([p for _, p, _ in B_POINTS], float)
     ys = np.array([s for _, _, s in B_POINTS], float)
     labels = [l for l, _, _ in B_POINTS]
@@ -105,33 +109,39 @@ def fig_b():
     ax.plot(xs, ys, color="#7fbf7f", lw=2.2, zorder=2, alpha=0.9)
     cmap = LinearSegmentedColormap.from_list("cap", ["#bfe3c6", "#4bab6b", "#127a3a", "#0b4d24"])
     frac = np.linspace(0, 1, len(xs))
+    # Markers scale with the canvas: s=200 on the old 7.6x5.5 figure becomes a
+    # blob on a 4.9x3.03 panel, and the six ladder points would touch.
     for xi, yi, lab, f in zip(xs, ys, labels, frac):
-        ax.scatter([xi], [yi], s=200, color=cmap(f), edgecolors="white",
-                   linewidths=1.8, zorder=4)
+        ax.scatter([xi], [yi], s=78, color=cmap(f), edgecolors="white",
+                   linewidths=1.3, zorder=4)
 
     # off-curve control point (red X): same params as Gate r=1, input-independent
     cx, cpar, cy = CONTROL
-    ax.scatter([cpar], [cy], marker="X", s=210, color="#d62728", edgecolors="white",
-               linewidths=1.6, zorder=5, label="Input-indep.")
-    ax.annotate(cx, (cpar, cy), textcoords="offset points", xytext=(15, -4),
-                ha="left", va="top", fontsize=9.5, color="#b02020")
+    ax.scatter([cpar], [cy], marker="X", s=88, color="#d62728", edgecolors="white",
+               linewidths=1.2, zorder=5, label="Input-indep.")
+    ax.annotate(cx, (cpar, cy), textcoords="offset points", xytext=(10, -3),
+                ha="left", va="top", fontsize=FS_LEGEND, color="#b02020")
     ax.annotate("", xy=(cpar, cy + 0.005), xytext=(cpar, 0.70),
-                arrowprops=dict(arrowstyle="-|>", color="#d62728", lw=1.5, alpha=0.75), zorder=3)
+                arrowprops=dict(arrowstyle="-|>", color="#d62728", lw=1.3, alpha=0.75), zorder=3)
 
     # legend proxy for the ladder markers
-    ax.scatter([], [], s=120, color="#2ca02c", edgecolors="white",
+    ax.scatter([], [], s=52, color="#2ca02c", edgecolors="white",
                label="Non-linear gate (rank ↑)")
 
-    ax.set_xlabel("Trainable parameters", fontsize=15, labelpad=8)
-    ax.set_ylabel("Converged Score", fontsize=16, labelpad=8)
-    ax.set_title("Non-linearity Capacity Ladder", fontsize=14, pad=12)
+    ax.set_xlabel("Trainable parameters", fontsize=FS_AXLABEL, labelpad=6)
+    ax.set_ylabel("Converged Score", fontsize=FS_AXLABEL, labelpad=6)
+    ax.set_title("Non-linearity Capacity Ladder", fontsize=FS_TITLE, pad=9)
     ax.grid(True, which="major", color="#e4e4e4", lw=0.8, zorder=0)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
-    ax.legend(loc="lower right", fontsize=10.5, framealpha=0.95, edgecolor="#dddddd")
-    fig.tight_layout(); os.makedirs(os.path.dirname(FIG_B), exist_ok=True)
-    fig.savefig(FIG_B, bbox_inches="tight", format="svg", dpi=400)
-    print(f"[ok] saved: {FIG_B}")
+    # "center right", not "lower right": on the narrow panel the lower-right box
+    # lands on top of the "+ input-indep vector" annotation. The mid-right band is
+    # empty here -- the ladder has already saturated up at the Full-param line by
+    # 1e6 params, so nothing is plotted below it.
+    ax.legend(loc="center right", fontsize=FS_LEGEND, framealpha=0.95,
+              edgecolor="#dddddd", handlelength=1.4, handletextpad=0.35,
+              labelspacing=0.25, borderpad=0.4)
+    save_panel(fig, FIG_B)
     plt.close(fig)
 
 
@@ -146,7 +156,7 @@ def fig_c():
     scale -> more mass pushed toward 0/1 (more selective gating).
     """
     _rc()
-    fig, ax = plt.subplots(figsize=(7.6, 5.5))
+    fig, ax = plt.subplots(figsize=PANEL_FIGSIZE)
     rng = np.random.default_rng(7)
     N = 20000
 
@@ -180,16 +190,19 @@ def fig_c():
     ytop = min(ymax, 0.1) * 1.15
     ax.set_ylim(0, ytop)
 
-    ax.set_xlabel("Per-token gate value", fontsize=15, labelpad=8)
-    ax.set_ylabel("Fraction of tokens", fontsize=16, labelpad=8)
+    ax.set_xlabel("Per-token gate value", fontsize=FS_AXLABEL, labelpad=6)
+    ax.set_ylabel("Fraction of tokens", fontsize=FS_AXLABEL, labelpad=6)
     ax.set_xlim(0, 1)
-    ax.set_title("Distribution of Gate Values Across Different Input Tokens", fontsize=14, pad=12)
+    # At FS_TITLE this is 326 pt wide against a 353 pt canvas -- it fits, but
+    # there is no room left, so keep the wording if you change the font size.
+    ax.set_title("Distribution of Gate Values Across Different Input Tokens",
+                 fontsize=FS_TITLE, pad=9)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
-    ax.legend(loc="upper right", fontsize=10.5, bbox_to_anchor=(0.98, 1),framealpha=0.95, edgecolor="#dddddd")
-    fig.tight_layout(); os.makedirs(os.path.dirname(FIG_C), exist_ok=True)
-    fig.savefig(FIG_C, bbox_inches="tight", format="svg", dpi=400)
-    print(f"[ok] saved: {FIG_C}")
+    ax.legend(loc="upper right", fontsize=FS_LEGEND_SMALL, bbox_to_anchor=(0.99, 1),
+              framealpha=0.95, edgecolor="#dddddd", handlelength=1.4,
+              handletextpad=0.35, labelspacing=0.25, borderpad=0.4)
+    save_panel(fig, FIG_C)
     plt.close(fig)
 
 

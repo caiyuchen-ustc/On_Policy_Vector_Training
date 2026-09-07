@@ -34,10 +34,25 @@ ROWS = ["High", "Mid-High", "Mid", "Low-Mid", "Bottom"]
 # perf value per (row, col). Every cell filled.
 # Full-param / LoRA-* are all ~0.83-0.84 (similar, good at every depth).
 # Vector Steering: bottom/mid ~0.81-0.82, then drops off at the high layers.
+# Depth bands: 36 layers (Qwen3-4B) split into five equal slices. These bounds
+# were previously nowhere in the repo -- only the five labels were -- which is why
+# the vector score at "high layers" could disagree between figures without anyone
+# being able to say whether 25-28 meant Mid-High or High. Anything quoting a band
+# must resolve it here.
+BANDS = {
+    "High":     (29, 35),
+    "Mid-High": (22, 28),
+    "Mid":      (14, 21),
+    "Low-Mid":  (7, 13),
+    "Bottom":   (0, 6),
+}
+
+# Mid-High vector = 0.64 to match make_gate_ablations.py / the delta figure; see
+# the note in make_layer_method_delta.py for why 0.64 rather than the old 0.60.
 GRID = {
     #            Full  LoRA16 LoRA8 LoRA1  Vector
     "High":     [0.84, 0.83, 0.84, 0.83, 0.50],
-    "Mid-High": [0.84, 0.84, 0.83, 0.84, 0.60],
+    "Mid-High": [0.84, 0.84, 0.83, 0.84, 0.64],
     "Mid":      [0.84, 0.83, 0.84, 0.83, 0.81],
     "Low-Mid":  [0.83, 0.84, 0.83, 0.84, 0.82],
     "Bottom":   [0.84, 0.83, 0.84, 0.83, 0.81],

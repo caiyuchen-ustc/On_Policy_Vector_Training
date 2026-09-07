@@ -1,6 +1,6 @@
 {
  "meta": {
-  "title": "On-Policy Distillation on Math with Qwen3-4B",
+  "title": "Math \u00b7 Qwen3-4B",
   "teacher_score": 0.835,
   "val_metric": "critic/score/mean"
  },

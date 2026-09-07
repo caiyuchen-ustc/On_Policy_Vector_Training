@@ -1,6 +1,6 @@
 {
  "meta": {
-  "title": "Performance of Different Data Sources & Teacher Shifts on MATH500",
+  "title": "Trace Source \u00d7 Sampling \u00b7 MATH500",
   "teacher_score": null,
   "val_metric": "accuracy"
  },

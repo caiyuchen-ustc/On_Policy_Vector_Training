@@ -1,6 +1,6 @@
 {
  "meta": {
-  "title": "On-Policy Distillation on IF with Qwen2.5-7B-Deepseek",
+  "title": "IF \u00b7 Qwen2.5-7B-Deepseek",
   "teacher_score": 0.86,
   "val_metric": "critic/score/mean"
  },

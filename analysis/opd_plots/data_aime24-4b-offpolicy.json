@@ -1,6 +1,6 @@
 {
  "meta": {
-  "title": "Off-Policy Distillation on AIME24 with Qwen3-4B",
+  "title": "AIME24 \u00b7 Qwen3-4B",
   "teacher_score": 0.6,
   "val_metric": "val-core/AIME2024/reward/mean@4"
  },

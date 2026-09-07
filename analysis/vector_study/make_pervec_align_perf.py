@@ -69,7 +69,7 @@ def main():
         ax.set_axisbelow(True)
         ax.plot(x, e8, "-o", color=ALIGN_COLOR, lw=2.2, ms=6,
                 mfc=ALIGN_COLOR, mec="white", mew=1.2, zorder=4,
-                label="Energy in top-8 PCs")
+                label="Energy in Top-8 PCs")
         ax.axhline(RAND, ls="--", color=RAND_COLOR, lw=1.4, zorder=2)
         # 在虚线右侧添加文字标注：physics/chemistry 在上方，biology/material 在下方
         if dom in ["physics", "chemistry", "material"]:
@@ -79,7 +79,7 @@ def main():
             ax.text(K - 0.7, RAND - 0.02, "Random baseline", 
                     color=RAND_COLOR, fontsize=9, va="top", ha="right")
         ax.set_ylim(0, max(1.0, e8.max() * 1.15))
-        ax.set_ylabel("Energy in top-8 PCs (%)", color=ALIGN_COLOR, fontsize=13, labelpad=6)
+        ax.set_ylabel("Energy in Top-8 PCs (%)", color=ALIGN_COLOR, fontsize=13, labelpad=6)
         ax.tick_params(axis="y", labelcolor=ALIGN_COLOR)
         for sp in ("top",):
             ax.spines[sp].set_visible(False)

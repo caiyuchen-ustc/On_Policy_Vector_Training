@@ -22,6 +22,9 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from matplotlib.colors import LinearSegmentedColormap
 
+from panel_style import (FS_AXLABEL, FS_LEGEND, FS_TITLE, PANEL_FIGSIZE,
+                         panel_rc, save_panel)
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIG = os.path.join(HERE, "fig", "opd_layer-gradient-curves.svg")
 
@@ -77,14 +80,10 @@ def _lighten(rgb, amount=0.55):
 
 def main():
     st = np.arange(1, END + 1, dtype=float)
-    plt.rcParams.update({
-        "font.size": 18, "font.family": "DejaVu Sans",
-        "axes.edgecolor": "#666666", "axes.linewidth": 1.0,
-        "axes.grid": True, "grid.color": "#ececec", "grid.linewidth": 0.9,
-        "xtick.labelsize": 13, "ytick.labelsize": 13,
-        "figure.dpi": 600, "savefig.dpi": 600,
-    })
-    fig, ax = plt.subplots(figsize=(7.2, 5.6))
+    # Canvas and fonts come from panel_style so this panel lines up with
+    # fig/opd_layer-method-delta.svg and with the other three panels.
+    panel_rc()
+    fig, ax = plt.subplots(figsize=PANEL_FIGSIZE)
 
     for i, (label, depth, start, floor, tau, nf) in enumerate(LAYERS):
         g = _grad_curve(start, floor, tau, nf, seed=31 + i)
@@ -93,22 +92,19 @@ def main():
         ax.plot(st, _ema(g, EMA_ALPHA), color=color, lw=2.6, zorder=3,
                 label=label, solid_capstyle="round")
 
-    ax.set_xlabel("Training step", fontsize=17, labelpad=8)
-    ax.set_ylabel("Steering gradient norm", fontsize=16, labelpad=8)
-    ax.set_title(TITLE, fontsize=14, pad=12)
+    ax.set_xlabel("Training step", fontsize=FS_AXLABEL, labelpad=6)
+    ax.set_ylabel("Steering gradient norm", fontsize=FS_AXLABEL, labelpad=6)
+    ax.set_title(TITLE, fontsize=FS_TITLE, pad=9)
     ax.xaxis.set_major_locator(MaxNLocator(nbins=8, integer=True))
     ax.margins(x=0); ax.set_xlim(1, END); ax.set_ylim(0, 0.055)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
 
-    ax.legend(loc="upper right", bbox_to_anchor=(0.995, 0.98), fontsize=8.5,
-              framealpha=0.95, edgecolor="#dddddd", ncol=2, handlelength=1.4,
-              columnspacing=0.9, handletextpad=0.4, labelspacing=0.28, borderpad=0.5)
+    ax.legend(loc="upper right", bbox_to_anchor=(0.995, 0.98), fontsize=FS_LEGEND,
+              framealpha=0.95, edgecolor="#dddddd", ncol=2, handlelength=1.2,
+              columnspacing=0.7, handletextpad=0.35, labelspacing=0.22, borderpad=0.4)
 
-    fig.tight_layout()
-    os.makedirs(os.path.dirname(FIG), exist_ok=True)
-    fig.savefig(FIG, bbox_inches="tight", format="svg", dpi=600)
-    print(f"[ok] saved: {FIG}")
+    save_panel(fig, FIG)
 
 
 if __name__ == "__main__":

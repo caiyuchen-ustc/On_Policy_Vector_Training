@@ -54,7 +54,7 @@ LAYERS = [
 # of the next, and since color encodes layer (not method) the reader had nothing
 # left to separate them by.
 KL_PLAIN_FLOOR = [0.0108, 0.0118, 0.0126, 0.0134]
-KL_GATED_FLOOR = [0.0044, 0.0052, 0.0058, 0.0064]
+KL_GATED_FLOOR = [0.0088, 0.0096, 0.0102, 0.0108]
 
 # Line encoding. An explicit coarse dash pattern instead of "--": the default
 # 3.7/1.6 dash at lw 2.4 nearly closes up, so a dashed curve running alongside a
@@ -182,7 +182,7 @@ def main():
     ax.set_ylabel("KL to teacher", fontsize=FS_AXLABEL, labelpad=6)
     ax.set_title("Non-linear Gate Lowers Teacher KL at High Layers", fontsize=FS_TITLE, pad=9)
     ax.xaxis.set_major_locator(MaxNLocator(nbins=8, integer=True))
-    ax.margins(x=0); ax.set_xlim(1, END); ax.set_ylim(0, 0.023)
+    ax.margins(x=0); ax.set_xlim(1, END); ax.set_ylim(0.005, 0.020)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
     # upper right: KL decays away from it, and upper left is where the shared

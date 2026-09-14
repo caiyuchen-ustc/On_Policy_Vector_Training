@@ -70,7 +70,18 @@ def main():
     axes[1].legend(loc="lower left", fontsize=FS_LEGEND, framealpha=0.95,
                    edgecolor="#dddddd", handlelength=1.0, handletextpad=0.35,
                    labelspacing=0.22, borderpad=0.4)
-    save_row(fig, FIG)
+
+    # Tighter than save_row's default: the standard rect leaves a full panel
+    # margin (2 x 0.175 of a panel width) between neighbours, but a shared row
+    # only needs room for one y label + tick labels in each gap (~0.18). Axes
+    # grow from 0.65 to 0.763 of a panel width; outer margins stay at the
+    # standard 0.175 (in panel units) so panel 1's y label still fits.
+    margin = 0.175 / len(PANELS)
+    fig.subplots_adjust(left=margin, right=1 - margin,
+                        top=0.888, bottom=0.208, wspace=0.236)
+    os.makedirs(os.path.dirname(FIG), exist_ok=True)
+    fig.savefig(FIG, format="svg", dpi=600)
+    print(f"[ok] saved: {FIG}")
     plt.close(fig)
 
 

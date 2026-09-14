@@ -89,12 +89,14 @@ def main():
         "xtick.labelsize": 12, "ytick.labelsize": 12,
         "figure.dpi": 400, "savefig.dpi": 400,
     })
-    fig, ax = plt.subplots(figsize=(8.0, 5.0))
+    # Use a flatter panel aspect ratio so the training trajectory is easier to
+    # compare horizontally and matches the compact style of the gated-KL plot.
+    fig, ax = plt.subplots(figsize=(6.0, 3.0))
     ax.grid(axis="y", color="#ececec", lw=0.9); ax.set_axisbelow(True)
 
-    l1, = ax.plot(step, score, "-", color=SCORE_COLOR, lw=1.1, zorder=4, label="Accuracy (score)")
+    l1, = ax.plot(step, score, "-", color=SCORE_COLOR, lw=1.1, zorder=4, label="Score")
     ax.set_xlabel("Training step", fontsize=14, labelpad=8)
-    ax.set_ylabel("Accuracy (%)", color=SCORE_COLOR, fontsize=14, labelpad=8)
+    ax.set_ylabel("Score (%)", color=SCORE_COLOR, fontsize=14, labelpad=8)
     ax.tick_params(axis="y", labelcolor=SCORE_COLOR)
     ax.set_ylim(0, 100)
     ax.set_xlim(0, step.max())
@@ -103,15 +105,15 @@ def main():
     ax2 = ax.twinx()
     l2, = ax2.plot(step, psi, "-", color=PSI_COLOR, lw=1.5, alpha=0.9, zorder=3,
                    label="PSI (principal-subspace intrusion)")
-    ax2.set_ylabel("PSI: update energy in top-8 PCs (%)", color=PSI_COLOR, fontsize=13, labelpad=8)
+    ax2.set_ylabel("Energy in Top-8 PCs (%)", color=PSI_COLOR, fontsize=13, labelpad=6)
     ax2.tick_params(axis="y", labelcolor=PSI_COLOR)
     ax2.set_ylim(0, 3.6)
     ax2.spines["top"].set_visible(False)
 
     ax.axvspan(onset, step.max(), color="#f2c200", alpha=0.13, zorder=1)
     ax.legend(handles=[l1, l2], loc="lower left", fontsize=11, framealpha=0.95, edgecolor="#ddd")
-    ax.set_title("Slow Rise, Sudden Collapse: PSI Rises Before the Score Falls (DeepSeek-1.5B RL)",
-                 fontsize=12.5, pad=10)
+    ax.set_title("PSI Coincides with Score Collapse (Qwen2.5-7B-Deepseek, IF)",
+                 fontsize=12.5, pad=9)
 
     fig.tight_layout()
     os.makedirs(os.path.dirname(FIG), exist_ok=True)

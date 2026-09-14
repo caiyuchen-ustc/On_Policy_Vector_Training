@@ -50,10 +50,10 @@ D_MODEL = 2560
 FULL_PARAMS = 4_000_000_000
 B_POINTS = [
     ("Vector",       1 * D_MODEL,        0.64),
-    ("Gate r=1",     2 * 1 * D_MODEL,    0.70),
-    ("Gate r=4",     2 * 4 * D_MODEL,    0.76),
-    ("Gate r=8",     2 * 8 * D_MODEL,    0.80),
-    ("Gate r=16",    2 * 16 * D_MODEL,   0.82),
+    ("Gate r=1",     2 * 1 * D_MODEL,    0.68),
+    ("Gate r=4",     2 * 4 * D_MODEL,    0.73),
+    ("Gate r=8",     2 * 8 * D_MODEL,    0.77),
+    ("Gate r=16",    2 * 16 * D_MODEL,   0.80),
     ("Full-param",   FULL_PARAMS,        0.84),
 ]
 B_SATURATE = 0.84   # full-param reference line
@@ -101,19 +101,26 @@ def fig_b():
     ax.axhspan(B_SATURATE, 0.90, xmin=0, xmax=1, color="#e8f5ec", alpha=0.7, zorder=0)  # saturated
     # ax.text(xs.min() * 0.55, 0.615, "fail", fontsize=10, color="#c0392b", va="center", style="italic")
 
-    # full-param reference
-    ax.axhline(B_SATURATE, color="#1f77b4", ls="--", lw=1.6, alpha=0.8, zorder=1,
-               label="Full-param level")
-
-    # connecting line (soft) + gradient-colored markers by rank/capacity
-    ax.plot(xs, ys, color="#7fbf7f", lw=2.2, zorder=2, alpha=0.9)
+    # Connect only the vector/gated configurations. Full-parameter tuning is a
+    # qualitatively different update family and is shown as an independent
+    # reference point rather than as the next point on the gate-rank curve.
+    gate_xs = xs[:-1]
+    gate_ys = ys[:-1]
+    ax.plot(gate_xs, gate_ys, color="#7fbf7f", lw=2.2, zorder=2, alpha=0.9)
     cmap = LinearSegmentedColormap.from_list("cap", ["#bfe3c6", "#4bab6b", "#127a3a", "#0b4d24"])
-    frac = np.linspace(0, 1, len(xs))
+    frac = np.linspace(0, 1, len(gate_xs))
     # Markers scale with the canvas: s=200 on the old 7.6x5.5 figure becomes a
     # blob on a 4.9x3.03 panel, and the six ladder points would touch.
-    for xi, yi, lab, f in zip(xs, ys, labels, frac):
+    for xi, yi, lab, f in zip(gate_xs, gate_ys, labels[:-1], frac):
         ax.scatter([xi], [yi], s=78, color=cmap(f), edgecolors="white",
                    linewidths=1.3, zorder=4)
+
+    # Full-parameter result: separate blue marker matching the horizontal
+    # full-parameter reference line.
+    full_x, full_y = xs[-1], ys[-1]
+    ax.scatter([full_x], [full_y], s=86, color="#1f77b4",
+               edgecolors="white", linewidths=1.3, zorder=5,
+               label="Full-param")
 
     # off-curve control point (red X): same params as Gate r=1, input-independent
     cx, cpar, cy = CONTROL
@@ -121,8 +128,24 @@ def fig_b():
                linewidths=1.2, zorder=5, label="Input-indep.")
     ax.annotate(cx, (cpar, cy), textcoords="offset points", xytext=(10, -3),
                 ha="left", va="top", fontsize=FS_LEGEND, color="#b02020")
-    ax.annotate("", xy=(cpar, cy + 0.005), xytext=(cpar, 0.70),
-                arrowprops=dict(arrowstyle="-|>", color="#d62728", lw=1.3, alpha=0.75), zorder=3)
+    # Arrow starts below Gate r=1 and points toward the matched-parameter
+    # input-independent control. Leave a small gap at both ends so the shaft
+    # does not pass through either marker.
+    gate_r1_y = B_POINTS[1][2]
+    ax.annotate(
+        "",
+        xy=(cpar, cy + 0.010),
+        xytext=(cpar, gate_r1_y - 0.008),
+        arrowprops=dict(
+            arrowstyle="-|>",
+            color="#d62728",
+            lw=1.3,
+            alpha=0.75,
+            shrinkA=3,
+            shrinkB=2,
+        ),
+        zorder=3,
+    )
 
     # legend proxy for the ladder markers
     ax.scatter([], [], s=52, color="#2ca02c", edgecolors="white",
@@ -213,4 +236,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -11,7 +11,7 @@ Qwen3-4B). Two figures, same style as make_layer_speed_curves.py:
   (2) student<->teacher KL loss (actor/kl_loss) vs step: gated drives the KL to
       the teacher much lower than plain.
 
-Rerun:  python make_gated_highlayer.py
+Rerun:  python make_gated_highlayer.2py
 Output: fig/opd_gated-highlayer-score.svg, fig/opd_gated-highlayer-kl.svg
 """
 

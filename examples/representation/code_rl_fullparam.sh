@@ -47,7 +47,7 @@ fi
 # Set AUTO_START_SANDBOX=false to skip (sandbox managed separately / on another host).
 
 export SANDBOX_PORT="${SANDBOX_PORT:-8080}"
-SANDBOXFUSION_DIR="${SANDBOXFUSION_DIR:-/apdcephfs_zwfy3/share_302867165/ewencai/CODE/SandboxFusion}"
+SANDBOXFUSION_DIR="${SANDBOXFUSION_DIR:-${OPV_ROOT}/../SandboxFusion}"
 # Loopback traffic must bypass the corporate proxy, else POSTs to 127.0.0.1 fail.
 export no_proxy="127.0.0.1,localhost,${no_proxy:-}"
 export NO_PROXY="127.0.0.1,localhost,${NO_PROXY:-}"
@@ -57,6 +57,4 @@ if [ "${AUTO_START_SANDBOX}" = "true" ]; then
 fi
 export SANDBOX_FUSION_URL="${SANDBOX_FUSION_URL:-http://127.0.0.1:${SANDBOX_PORT}/run_code}"
 
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/code_rl_fullparam.sh >code_rl_fullparam_1e-6.log 2>&1 &
 exec bash "${SCRIPT_DIR}/code_rl.sh" "$@"

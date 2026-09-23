@@ -30,7 +30,7 @@ call-based (`fn_name`) problems — so turning it on changes throughput, not the
 ## End-to-end flow
 
 ```bash
-cd /apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/recipe/code_sandbox
+cd recipe/code_sandbox
 
 # 1. Start the sandbox on the training node (once). Prints the URL and waits for health.
 bash run_sandbox.sh start

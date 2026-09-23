@@ -27,5 +27,4 @@ export TRAINABLE_TOKEN_VECTOR_FORCE_ALL_TOKENS=${TRAINABLE_TOKEN_VECTOR_FORCE_AL
 export LR=${LR:-1e-1}
 export EXPERIMENT_NAME=${EXPERIMENT_NAME:-ifevalg-student-sft-singlev_layer${TRAINABLE_TOKEN_VECTOR_LAYER_IDX}_lr${LR}}
 
-# nohup bash ${OPV_ROOT}/examples/representation/sft_student_single.sh >sft_student_single.log 2>&1 &
 exec bash "${SCRIPT_DIR}/sft_student.sh" "$@"

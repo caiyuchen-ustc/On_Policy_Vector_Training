@@ -34,7 +34,7 @@ LAYER_TAG=${TRAINABLE_TOKEN_VECTOR_LAYERS//:/-}
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-Qwen3-4B-Code-OfflineDistill_singlev_layers${LAYER_TAG}_lr${ACTOR_LR}}"
 
 export SANDBOX_PORT="${SANDBOX_PORT:-8080}"
-SANDBOXFUSION_DIR="${SANDBOXFUSION_DIR:-/apdcephfs_zwfy3/share_302867165/ewencai/CODE/SandboxFusion}"
+SANDBOXFUSION_DIR="${SANDBOXFUSION_DIR:-${OPV_ROOT}/../SandboxFusion}"
 export no_proxy="127.0.0.1,localhost,${no_proxy:-}"
 export NO_PROXY="127.0.0.1,localhost,${NO_PROXY:-}"
 AUTO_START_SANDBOX="${AUTO_START_SANDBOX:-true}"
@@ -42,6 +42,4 @@ if [ "${AUTO_START_SANDBOX}" = "true" ]; then
     bash "${SANDBOXFUSION_DIR}/run_sandboxfusion.sh" start
 fi
 export SANDBOX_FUSION_URL="${SANDBOX_FUSION_URL:-http://127.0.0.1:${SANDBOX_PORT}/run_code}"
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/code_distill_offline_single.sh >code_distill_offline_single.log 2>&1 &
 exec bash "${SCRIPT_DIR}/code_distill_offline.sh" "$@"

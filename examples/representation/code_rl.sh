@@ -16,7 +16,6 @@ export RAY_DISABLE_MEMORY_MONITOR=${RAY_DISABLE_MEMORY_MONITOR:-1}
 export USED_MODEL=${USED_MODEL:-no_api}
 
 # Network env (keep empty by default; set outside if needed)
-# WANDB_PROXY=${WANDB_PROXY:-${https_proxy:-${HTTPS_PROXY:-}}}
 
 # Common hardware/env knobs
 
@@ -120,7 +119,6 @@ OVERLONG_BUFFER_LEN=$((OVERLONG_BUFFER_LEN))
 # instead of the in-process serial prime_code path. Leave empty to keep in-process prime_code.
 #
 # Backend = the official ByteDance SandboxFusion, run bare-metal (isolation=none). Start it with
-#   bash /apdcephfs_zwfy3/share_302867165/ewencai/CODE/SandboxFusion/run_sandboxfusion.sh start
 # (one-time env setup: setup_sandboxfusion.sh). It serves POST /run_code on 127.0.0.1:8080 and
 # runs Python submissions in the 'sandbox-runtime' conda env (full runtime: numpy/torch/...).
 # The code_rl_* wrappers auto-start it unless AUTO_START_SANDBOX=false.
@@ -365,8 +363,6 @@ TRAINER_ARGS=(
     trainer.save_vector_dir="${SAVE_VECTOR_DIR}"
 )
 
-# if [ -n "${WANDB_PROXY}" ]; then
-#     TRAINER_ARGS+=(+trainer.wandb_proxy="${WANDB_PROXY}")
 # fi
 
 REWARD_ARGS=(

@@ -21,5 +21,4 @@ export MODEL_USE_SHM="${MODEL_USE_SHM:-true}"
 export ACTOR_LR="${ACTOR_LR:-1e-5}"
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-Qwen3-4B-Code-OfflineDistill_lora_r${LORA_RANK}_lr${ACTOR_LR}}"
 
-# nohup bash ${OPV_ROOT}/examples/representation/code_distill_offline_lora8.sh >code_distill_offline_lora8.log 2>&1 &
 exec bash "${SCRIPT_DIR}/code_distill_offline.sh" "$@"

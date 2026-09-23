@@ -24,7 +24,5 @@ export SAVE_VECTOR="${SAVE_VECTOR:-false}"
 # Optional convenience defaults for naming/outputs.
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-repre_qwen3-4b_fullparam_lr${ACTOR_LR}}"
 export LOCAL_DIR_BASE="${LOCAL_DIR_BASE:-${OPV_ROOT}/examples/g_opd/rlrlr_repre_qwen3-4b-opd-fullparam_lr${ACTOR_LR}}"
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/4bopd_fullparam.sh >4bopd_fullparam1e-7.log 2>&1 &
 exec bash "${SCRIPT_DIR}/4bopd.sh" "$@"
 

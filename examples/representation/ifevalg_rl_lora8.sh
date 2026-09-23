@@ -39,6 +39,4 @@ export SAVE_VECTOR=${SAVE_VECTOR:-false}
 
 export EXPERIMENT_NAME=${EXPERIMENT_NAME:-IFEvalG-Qwen3-8B-IF-RL_lora_r${LORA_RANK}_lr${ACTOR_LR}}
 export DEFAULT_LOCAL_DIR=${DEFAULT_LOCAL_DIR:-${OPV_ROOT}/examples/ifevalg_rl/ifevalg_qwen2.5-7b-lora_r${LORA_RANK}_lr${ACTOR_LR}}
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/ifevalg_rl_lora8.sh >ifevalg_rl_lora8.log 2>&1 &
 exec bash "${SCRIPT_DIR}/ifevalg_rl.sh" "$@"

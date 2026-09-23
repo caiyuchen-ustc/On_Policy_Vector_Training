@@ -16,7 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #
 # 与 progressive_double 的唯一区别在阶段0：
 #   阶段0 [0,T1)：basis[0] 从 0 起步，像 raw single 一样自由学（无 normalize、无 alpha、
-#                 可自由增长模长），复现你验证过好使的 single 训练（lr 需求也一致）。
+#                 可自由增长模长），沿用 single 训练的学习率设置。
 #   切换(step==T1)：alpha := ‖basis[0]‖（主向量学到的模长），basis[0] 归一化为单位向量，
 #                   其余基对它正交化。alpha 之后固定不变。
 #   阶段1+ ：progressive_double 倍增(active 1→2→4→...→N)+每阶段内 ramp 衰减→随机采样，
@@ -55,7 +55,5 @@ export TRAINABLE_TOKEN_VECTOR_FREEZE_PRIMARY_AFTER_WARMUP="${TRAINABLE_TOKEN_VEC
 
 # ----- 产物存到 raw 专属目录 -----
 export SAVE_VECTOR_BASE_DIR="${SAVE_VECTOR_BASE_DIR:-${OPV_ROOT}/repre/opd/repre_qwen3-4b-opd_multi_raw/trainable_vectors}"
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/4b_opd_multi_raw.sh >4bopd_multi_raw1e-2.log 2>&1 &
 # 其余（关 GC、fp32、force_all_tokens=true）沿用 4b_opd_multi.sh 的默认。
 exec bash "${SCRIPT_DIR}/4b_opd_multi.sh" "$@"

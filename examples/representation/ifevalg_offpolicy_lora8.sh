@@ -50,5 +50,4 @@ export ACTOR_LR="${ACTOR_LR:-1e-5}"
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-IFEvalG-Qwen3-4B-IF-OffPolicy_lora_r${LORA_RANK}_lr${ACTOR_LR}}"
 export LOCAL_DIR_BASE="${LOCAL_DIR_BASE:-${OPV_ROOT}/examples/ifevalg_offpolicy/ifevalg_qwen3-4b-offpolicy-lora_lr${ACTOR_LR}}"
 
-# nohup sh ${OPV_ROOT}/examples/representation/ifevalg_offpolicy_lora8.sh >ifevalg_offpolicy_lora8.log 2>&1 &
 exec bash "${SCRIPT_DIR}/ifevalg_opd.sh" "$@"

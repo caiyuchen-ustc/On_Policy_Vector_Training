@@ -48,6 +48,5 @@ export TRAINABLE_TOKEN_VECTOR_FREEZE_PRIMARY_AFTER_WARMUP="${TRAINABLE_TOKEN_VEC
 # ----- 产物存到 atb 专属目录，避免和 curriculum=none 的 multi 混 -----
 export SAVE_VECTOR_BASE_DIR="${SAVE_VECTOR_BASE_DIR:-${OPV_ROOT}/repre/opd/repre_qwen3-4b-opd_multi_atb/trainable_vectors}"
 RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/4b_opd_multi_atb.sh >4bopd_multi_atb_8_9_32_2e-1.log 2>&1 &
 # 其余（关 GC、fp32、force_all_tokens=true、采样等）沿用 4b_opd_multi.sh 的默认。
 exec bash "${SCRIPT_DIR}/4b_opd_multi.sh" "$@"

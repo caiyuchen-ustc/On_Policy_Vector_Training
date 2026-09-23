@@ -23,6 +23,4 @@ export MODEL_USE_SHM="${MODEL_USE_SHM:-true}"
 export ACTOR_LR="${ACTOR_LR:-1e-3}"
 
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-IFEvalG-Qwen3-4B-IF-OfflineDistill_lora_r${LORA_RANK}_lr${ACTOR_LR}}"
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/ifevalg_distill_offline_lora8.sh >ifevalg_distill_offline_lora8.log 2>&1 &
 exec bash "${SCRIPT_DIR}/ifevalg_distill_offline.sh" "$@"

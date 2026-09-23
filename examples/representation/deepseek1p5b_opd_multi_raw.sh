@@ -68,5 +68,4 @@ export EXPERIMENT_NAME="${EXPERIMENT_NAME:-deepseek1p5b_rl_opd_multiv${TRAINABLE
 export LOCAL_DIR_BASE="${LOCAL_DIR_BASE:-${RUN_ROOT}/checkpoints}"
 export SAVE_VECTOR_BASE_DIR="${SAVE_VECTOR_BASE_DIR:-${RUN_ROOT}/trainable_vectors_multi_raw}"
 RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/deepseek1p5b_opd_multi_raw.sh >1p5b_opd_multi_raw.log 2>&1 &
 exec bash "${SCRIPT_DIR}/1p5bopd.sh" "$@"

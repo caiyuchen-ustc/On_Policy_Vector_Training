@@ -49,9 +49,7 @@ export LOCAL_DIR_BASE="${LOCAL_DIR_BASE:-${OPV_ROOT}/examples/g_opd/repre_qwen3-
 # 需要保存整模型 checkpoint（不是向量），给个正的 save_freq。
 export SAVE_FREQ="${SAVE_FREQ:-20}"
 
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
 
-#nohup sh ${OPV_ROOT}/examples/representation/4bopd_layer_range.sh >4bopd_layers26-321e-5.log 2>&1 &
 exec bash "${SCRIPT_DIR}/4bopd.sh" \
     actor_rollout_ref.model.train_layer_range_only=true \
     actor_rollout_ref.model.train_layer_range_start="${TRAIN_LAYER_RANGE_START}" \

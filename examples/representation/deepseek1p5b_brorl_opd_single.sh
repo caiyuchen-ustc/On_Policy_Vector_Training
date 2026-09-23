@@ -36,6 +36,4 @@ export SAVE_VECTOR="${SAVE_VECTOR:-true}"
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-deepseek1p5b_brorl_opd_singlev_layers${TRAINABLE_TOKEN_VECTOR_LAYERS//:/-}_lr${ACTOR_LR}}"
 export LOCAL_DIR_BASE="${LOCAL_DIR_BASE:-${RUN_ROOT}/checkpoints}"
 export SAVE_VECTOR_BASE_DIR="${SAVE_VECTOR_BASE_DIR:-${RUN_ROOT}/trainable_vectors}"
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/deepseek1p5b_brorl_opd_single.sh >1p5b_opd_single1e-4.log 2>&1 &
 exec bash "${SCRIPT_DIR}/1p5bopd.sh" "$@"

@@ -84,6 +84,4 @@ export STEER_ADAM_BETA1="${STEER_ADAM_BETA1:-0}"
 
 LAYER_TAG=${TRAINABLE_TOKEN_VECTOR_LAYERS//:/-}
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-DeepSeek-1.5B-SciKnowEval-OfflineDistill_seqbasis${TRAINABLE_TOKEN_VECTOR_NUM}_layers${LAYER_TAG}_lr${ACTOR_LR}}"
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/deepseek1p5b_distill_offline_seqbasis.sh >deepseek1p5b_distill_offline_seqbasis5e-2.log 2>&1 &
 exec bash "${SCRIPT_DIR}/deepseek1p5b_distill_offline.sh" "$@"

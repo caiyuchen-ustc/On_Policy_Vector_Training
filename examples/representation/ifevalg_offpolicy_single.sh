@@ -67,5 +67,4 @@ LAYER_TAG=${TRAINABLE_TOKEN_VECTOR_LAYERS//:/-}
 export EXPERIMENT_NAME=${EXPERIMENT_NAME:-IFEvalG-Qwen3-4B-IF-OffPolicy_singlev_layers${LAYER_TAG}_lr${ACTOR_LR}}
 export DEFAULT_LOCAL_DIR=${DEFAULT_LOCAL_DIR:-${OPV_ROOT}/examples/ifevalg_offpolicy/ifevalg_qwen3-4b-if-offpolicy-singlev_layers${LAYER_TAG}_lr${ACTOR_LR}}
 
-# nohup sh ${OPV_ROOT}/examples/representation/ifevalg_offpolicy_single.sh >ifevalg_offpolicy_single1e-1.log 2>&1 &
 exec bash "${SCRIPT_DIR}/ifevalg_opd.sh" "$@"

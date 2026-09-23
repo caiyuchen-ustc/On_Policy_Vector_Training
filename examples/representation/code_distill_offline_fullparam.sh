@@ -19,5 +19,4 @@ export SAVE_VECTOR="${SAVE_VECTOR:-false}"
 export ACTOR_LR="${ACTOR_LR:-1e-6}"
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-Qwen3-4B-Code-OfflineDistill_fullparam_lr${ACTOR_LR}}"
 
-# nohup bash ${OPV_ROOT}/examples/representation/code_distill_offline_fullparam.sh >code_distill_offline_fullparam.log 2>&1 &
 exec bash "${SCRIPT_DIR}/code_distill_offline.sh" "$@"

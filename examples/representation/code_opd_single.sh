@@ -57,7 +57,7 @@ export SAVE_VECTOR_DIR="${SAVE_VECTOR_DIR:-${OPV_ROOT}/repre/code_opd/trainable_
 
 # Auto-start sandbox server unless managed externally.
 export SANDBOX_PORT="${SANDBOX_PORT:-8081}"
-SANDBOXFUSION_DIR="${SANDBOXFUSION_DIR:-/apdcephfs_zwfy3/share_302867165/ewencai/CODE/SandboxFusion}"
+SANDBOXFUSION_DIR="${SANDBOXFUSION_DIR:-${OPV_ROOT}/../SandboxFusion}"
 export no_proxy="127.0.0.1,localhost,${no_proxy:-}"
 export NO_PROXY="127.0.0.1,localhost,${NO_PROXY:-}"
 AUTO_START_SANDBOX="${AUTO_START_SANDBOX:-true}"
@@ -65,6 +65,4 @@ if [ "${AUTO_START_SANDBOX}" = "true" ]; then
     bash "${SANDBOXFUSION_DIR}/run_sandboxfusion.sh" start
 fi
 export SANDBOX_FUSION_URL="${SANDBOX_FUSION_URL:-http://127.0.0.1:${SANDBOX_PORT}/run_code}"
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/code_opd_single.sh >code_opd_single_layers10-25.log 2>&1 &
 exec bash "${SCRIPT_DIR}/code_opd.sh" "$@"

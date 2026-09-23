@@ -17,7 +17,6 @@ OPV_LEGACY_MODEL_ROOT="${OPV_LEGACY_MODEL_ROOT:-${OPV_ROOT}/models}"
 # Usage:
 #   ROUNDS=4 bash gen_teacher_rollouts_deepseek1p5b.sh              # 4 epochs over full data
 #   ROUNDS=1 MAX_STEPS=10 bash gen_teacher_rollouts_deepseek1p5b.sh # 1 epoch, first 10*BATCH prompts
-# nohup bash examples/representation/gen_teacher_rollouts_deepseek1p5b.sh >gen_teacher_deepseek1p5b.log 2>&1 &
 # ============================================================================
 
 if [ -z "${BASH_VERSION:-}" ]; then
@@ -45,6 +44,4 @@ export GEN_TP="${GEN_TP:-1}"
 # Rollout passes / step cap (override on the command line).
 export ROUNDS="${ROUNDS:-20}"
 export MAX_STEPS="${MAX_STEPS:-50}"
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/gen_teacher_rollouts_deepseek1p5b.sh >gen_teacher_rollouts_deepseek1p5b.log 2>&1 &
 exec bash "${SCRIPT_DIR}/gen_teacher_rollouts.sh" "$@"

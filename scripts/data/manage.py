@@ -49,9 +49,8 @@ DOMAINS = {
             "eurus_validation": "G-OPD-Training-Data/Eurus/code_validation.parquet",
         },
         "note": (
-            "validation is the full local LiveCodeBench v5 export (880 problems), not the 100-row smoke subset. "
-            "The original converter caps tests at 30 and their combined bytes; this is an execution-budget variant, "
-            "not unrestricted official LCB evaluation."
+            "validation contains 880 LiveCodeBench v5 problems. The original converter limits each problem "
+            "to 30 test cases and caps combined test bytes, defining an execution-budget evaluation variant."
         ),
     },
     "instruction": {
@@ -59,9 +58,8 @@ DOMAINS = {
         "sources": ["nvidia/Nemotron-3-Nano-RL-Training-Blend", "allenai/IFBench_test"],
         "files": {"train": "ifevalg/ifevalg_train.parquet", "validation": "ifevalg/ifevalg_validation.parquet"},
         "note": (
-            "Original Nemotron instruction-following subset and independent AllenAI IFBench test set. "
-            "This is NOT an 80/20 IFEval split; the manuscript description differs "
-            "from the available experiment artifacts."
+            "Training uses 16,575 Nemotron instruction-following examples; validation uses the independent "
+            "300-example AllenAI IFBench test set. These are separate datasets, not an 80/20 partition."
         ),
     },
 }
@@ -180,8 +178,6 @@ train = load_dataset("{spec["repo"]}", "train", split="train")
 validation = load_dataset("{spec["repo"]}", "validation", split="validation")
 ```
 
-The available artifacts differ from several manuscript descriptions. The accompanying repository records these
-differences instead of relabeling datasets or inventing results.
 '''
         (dest / "README.md").write_text(card)
 

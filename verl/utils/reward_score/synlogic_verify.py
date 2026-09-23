@@ -14,7 +14,7 @@ verl calls this through ``custom_reward_function.path`` / ``.name`` with the
 signature ``compute_score(data_source, solution_str, ground_truth, extra_info)``.
 
 Environment variables:
-  SYNLOGIC_ROOT        : path to the SynLogic repo (default: sibling CODE/SynLogic).
+  SYNLOGIC_ROOT        : path to the SynLogic repo (default: external/SynLogic).
   SYNLOGIC_REQUIRE_FORMAT : "1" to multiply accuracy by a strict format reward
                             (the paper's `final = format * accuracy`). Default "0"
                             (accuracy-only), which is friendlier for cold-start
@@ -39,12 +39,13 @@ import json
 import os
 import re
 import sys
+from pathlib import Path
 
 THOUGHT_DELIMITER_END = "</think>"
 
 _DEFAULT_SYNLOGIC_ROOT = os.environ.get(
     "SYNLOGIC_ROOT",
-    "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/SynLogic",
+    str(Path(__file__).resolve().parents[3] / "external" / "SynLogic"),
 )
 
 _verifier_classes = None

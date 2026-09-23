@@ -54,6 +54,4 @@ export TRAINABLE_TOKEN_VECTOR_GATE_RANK="${TRAINABLE_TOKEN_VECTOR_GATE_RANK:-16}
 SAVE_VECTOR=${SAVE_VECTOR:-true}
 SAVE_VECTOR_BASE_DIR=${SAVE_VECTOR_BASE_DIR:-"${OPV_ROOT}/repre/opd/repre_qwen3-4b-opd_gated/trainable_vectors"}
 
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/4bopd_gated.sh >4bopd_32-33_gated5e-1.log 2>&1 &
 exec bash "${SCRIPT_DIR}/4bopd.sh" "$@"

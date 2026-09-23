@@ -43,7 +43,7 @@ export DEFAULT_LOCAL_DIR="${DEFAULT_LOCAL_DIR:-${OPV_ROOT}/examples/code_opd/cod
 
 # Auto-start sandbox server unless managed externally.
 export SANDBOX_PORT="${SANDBOX_PORT:-8080}"
-SANDBOXFUSION_DIR="${SANDBOXFUSION_DIR:-/apdcephfs_zwfy3/share_302867165/ewencai/CODE/SandboxFusion}"
+SANDBOXFUSION_DIR="${SANDBOXFUSION_DIR:-${OPV_ROOT}/../SandboxFusion}"
 export no_proxy="127.0.0.1,localhost,${no_proxy:-}"
 export NO_PROXY="127.0.0.1,localhost,${NO_PROXY:-}"
 AUTO_START_SANDBOX="${AUTO_START_SANDBOX:-true}"

@@ -45,5 +45,4 @@ LAYER_TAG="${TRAINABLE_TOKEN_VECTOR_LAYERS//:/-}"
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-DAPO-Qwen3-4B-RL_singlev_layers${LAYER_TAG}_lr${ACTOR_LR}}"
 export LOCAL_DIR_BASE="${LOCAL_DIR_BASE:-${OPV_ROOT}/examples/rl/repre_qwen3-4b-singlev_lr${ACTOR_LR}}"
 
-# nohup sh ${OPV_ROOT}/examples/representation/4b_rl_single.sh >4b_rl_single.log 2>&1 &
 exec bash "${SCRIPT_DIR}/4b_rl.sh" "$@"

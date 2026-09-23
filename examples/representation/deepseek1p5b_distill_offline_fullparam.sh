@@ -40,6 +40,4 @@ export ENABLE_TRAINABLE_TOKEN_VECTOR="${ENABLE_TRAINABLE_TOKEN_VECTOR:-false}"
 export SAVE_VECTOR="${SAVE_VECTOR:-false}"
 export ACTOR_LR="${ACTOR_LR:-1e-5}"
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-DeepSeek-1.5B-SciKnowEval-OfflineDistill_fullparam_lr${ACTOR_LR}}"
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/deepseek1p5b_distill_offline_fullparam.sh >deepseek1p5b_distill_offline_fullparam.log 2>&1 &
 exec bash "${SCRIPT_DIR}/deepseek1p5b_distill_offline.sh" "$@"

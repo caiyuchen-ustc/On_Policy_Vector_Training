@@ -94,8 +94,6 @@ ENTROPY_COEFF=${ENTROPY_COEFF:-0.005}
 
 LAYER_TAG=${TRAINABLE_TOKEN_VECTOR_LAYERS//:/-}
 export EXPERIMENT_NAME=${EXPERIMENT_NAME:-deepseek1p5b_brorl_rl_singlev_rpp_layers${LAYER_TAG}_lr${ACTOR_LR}}
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup bash ${OPV_ROOT}/examples/representation/deepseek1p5b_rl_single_rpp.sh >1p5b_rl_single_rpp.log 2>&1 &
 exec bash "${SCRIPT_DIR}/deepseek1p5b_rl.sh" \
     actor_rollout_ref.actor.entropy_coeff="${ENTROPY_COEFF}" \
     "$@"

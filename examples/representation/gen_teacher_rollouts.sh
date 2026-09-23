@@ -5,8 +5,6 @@ OPV_LEGACY_DATA_ROOT="${OPV_LEGACY_DATA_ROOT:-${OPV_ROOT}/../data}"
 OPV_LEGACY_MODEL_ROOT="${OPV_LEGACY_MODEL_ROOT:-${OPV_ROOT}/models}"
 
 
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/gen_teacher_rollouts.sh >gen_teacher_rollouts.log 2>&1 &
 
 if [ -z "${BASH_VERSION:-}" ]; then
     exec bash "$0" "$@"

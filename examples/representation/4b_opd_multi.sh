@@ -79,6 +79,4 @@ export SAVE_VECTOR SAVE_VECTOR_BASE_DIR
 # 本实验模型冻结、只训向量，激活显存需求小，不需要 checkpointing，直接关掉即可。
 GC_OVERRIDE="actor_rollout_ref.model.enable_gradient_checkpointing=False"
 
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-#nohup sh ${OPV_ROOT}/examples/representation/4b_opd_multi.sh >4bopd_multi_1e-1_8_9_16.log 2>&1 &
 exec bash "${SCRIPT_DIR}/4bopd.sh" "$@" "${GC_OVERRIDE}"

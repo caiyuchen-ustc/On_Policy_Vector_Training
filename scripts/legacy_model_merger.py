@@ -46,8 +46,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, Union
 import sys
-sys.path.append('apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD')
-sys.path.append('/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/')
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import numpy as np
 import torch
 from accelerate import init_empty_weights

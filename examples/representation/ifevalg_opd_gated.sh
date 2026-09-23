@@ -62,6 +62,4 @@ LAYER_TAG=${TRAINABLE_TOKEN_VECTOR_LAYERS//:/-}
 GATE_TAG=$([ "${TRAINABLE_TOKEN_VECTOR_GATED}" = "true" ] && echo "gated-${TRAINABLE_TOKEN_VECTOR_GATE_ACTIVATION}" || echo "plain")
 export EXPERIMENT_NAME=${EXPERIMENT_NAME:-IFEvalG-Qwen2.5-7B-IF-OPD_singlev_${GATE_TAG}_layers${LAYER_TAG}_lr${ACTOR_LR}}
 export DEFAULT_LOCAL_DIR=${DEFAULT_LOCAL_DIR:-${OPV_ROOT}/examples/ifevalg_opd/ifevalg_qwen3-4b-if-opd-singlev_${GATE_TAG}_layers${LAYER_TAG}_lr${ACTOR_LR}}
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/ifevalg_opd_gated.sh >ifevalg_opd_gated.log 2>&1 &
 exec bash "${SCRIPT_DIR}/ifevalg_opd.sh" "$@"

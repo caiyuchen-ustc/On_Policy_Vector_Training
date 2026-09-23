@@ -13,8 +13,7 @@ OPV_LEGACY_MODEL_ROOT="${OPV_LEGACY_MODEL_ROOT:-${OPV_ROOT}/models}"
 #
 # top-r = top-10% of hidden dim (1536 -> 154), precomputed & frozen from base-model
 # activations on ALL FOUR SciKnowEval domains (physics/chemistry/biology/material,
-# balanced sampling), stored in
-# analysis/vector_study/cache/act_pcs_top154_alldomains.pt.
+# balanced sampling). Set PC_PROJECTION_FILE to the precomputed basis file.
 #
 # Usage:
 #   PROJ=complement bash deepseek1p5b_seqbasis_pcproj.sh
@@ -29,7 +28,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 PROJ="${PROJ:-complement}"
 export PC_PROJECTION_MODE="${PROJ}"
-export PC_PROJECTION_FILE="${PC_PROJECTION_FILE:-${OPV_ROOT}/analysis/vector_study/cache/act_pcs_top154_alldomains.pt}"
+export PC_PROJECTION_FILE="${PC_PROJECTION_FILE:-}"
 
 # Distinct experiment name / save dir per ablation arm so the three runs don't collide.
 export TRAINABLE_TOKEN_VECTOR_LAYERS="${TRAINABLE_TOKEN_VECTOR_LAYERS:-5:15}"
@@ -51,9 +50,7 @@ echo "  exp     : ${EXPERIMENT_NAME}"
 echo "=================================================================="
 
 if [ "${PC_PROJECTION_MODE}" != "none" ] && [ ! -f "${PC_PROJECTION_FILE}" ]; then
-  echo "ERROR: PC file not found: ${PC_PROJECTION_FILE}" >&2
+  echo "ERROR: Set PC_PROJECTION_FILE to an existing precomputed basis file." >&2
   exit 1
 fi
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/deepseek1p5b_seqbasis_pcproj.sh >deepseek1p5b_seqbasis_pcproj.log 2>&1 &
 exec bash "${SCRIPT_DIR}/deepseek1p5b_distill_offline_seqbasis.sh" "$@"

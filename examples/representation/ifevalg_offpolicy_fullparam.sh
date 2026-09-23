@@ -43,5 +43,4 @@ export ACTOR_LR="${ACTOR_LR:-1e-6}"
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-IFEvalG-Qwen3-4B-IF-OffPolicy_fullparam_lr${ACTOR_LR}}"
 export LOCAL_DIR_BASE="${LOCAL_DIR_BASE:-${OPV_ROOT}/examples/ifevalg_offpolicy/ifevalg_qwen3-4b-offpolicy-fullparam_lr${ACTOR_LR}}"
 
-# nohup sh ${OPV_ROOT}/examples/representation/ifevalg_offpolicy_fullparam.sh >ifevalg_offpolicy_fullparam1e-6.log 2>&1 &
 exec bash "${SCRIPT_DIR}/ifevalg_opd.sh" "$@"

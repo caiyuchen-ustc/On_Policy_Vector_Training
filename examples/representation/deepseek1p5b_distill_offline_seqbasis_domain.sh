@@ -61,7 +61,5 @@ echo "[domain] DOMAIN=${DOMAIN}"
 echo "[domain] TRAIN/TEACHER = ${OFFLINE_TEACHER_DATA_PATH}"
 echo "[domain] VAL           = ${VAL_FILE}"
 echo "[domain] SAVE_VECTOR_DIR = ${SAVE_VECTOR_DIR}"
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/deepseek1p5b_distill_offline_seqbasis_domain.sh >deepseek1p5b_distill_offline_domain2seqbasis5e-4.log 2>&1 &
 # Delegate to the standard 1.5b seqbasis wrapper (layers 5:15, sequential_orthogonal, etc.).
 exec bash "${SCRIPT_DIR}/deepseek1p5b_distill_offline_seqbasis.sh" "$@"

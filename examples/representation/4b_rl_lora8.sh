@@ -30,8 +30,5 @@ export ACTOR_LR="${ACTOR_LR:-3e-5}"
 
 # LoRA does not need vector artifacts.
 export SAVE_VECTOR="${SAVE_VECTOR:-false}"
-# export WANDB_PROXY=http://star-proxy.oa.com:3128
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-DAPO-Qwen3-4B-RL_lora_r${LORA_RANK}_lr${ACTOR_LR}}"
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/4b_rl_lora8.sh >4b_rl_lora8.log 2>&1 &
 exec bash "${SCRIPT_DIR}/4b_rl.sh" "$@"

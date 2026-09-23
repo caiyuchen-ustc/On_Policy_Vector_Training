@@ -10,7 +10,7 @@ Registration (workbench_tool_config.yaml):
       - class_name: "verl.tools.workbench_tool.WorkbenchTool"
         config:
           type: native
-          m2rl_gym_root: "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/M2RL/M2RL/Gym"
+          m2rl_gym_root: "/path/to/M2RL/Gym"
         tool_schema: ...  (27 workbench tools, see workbench_tool_config.yaml)
 
 Data format (extra_info.tools_kwargs):
@@ -26,6 +26,7 @@ import json
 import logging
 import os
 import sys
+from pathlib import Path
 from typing import Any, Optional
 from uuid import uuid4
 
@@ -36,7 +37,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))
 
 # Default path to M2RL's Gym directory (overridable via tool config).
-_DEFAULT_M2RL_GYM = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/M2RL/M2RL/Gym"
+_DEFAULT_M2RL_GYM = os.environ.get(
+    "M2RL_GYM_ROOT", str(Path(__file__).resolve().parents[2] / "external" / "M2RL" / "Gym")
+)
 
 
 def _ensure_m2rl_imported(gym_root: str):

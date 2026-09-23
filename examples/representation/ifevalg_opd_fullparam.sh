@@ -25,5 +25,4 @@ export SAVE_VECTOR="${SAVE_VECTOR:-false}"
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-IFEvalG-Qwen3-4B-IF-OPD_fullparam_lr${ACTOR_LR}}"
 export LOCAL_DIR_BASE="${LOCAL_DIR_BASE:-${OPV_ROOT}/examples/ifevalg_opd/ifevalg_qwen3-4b-opd-fullparam_lr${ACTOR_LR}}"
 
-# nohup sh ${OPV_ROOT}/examples/representation/ifevalg_opd_fullparam.sh >ifevalg_opd_fullparam1e-6.log 2>&1 &
 exec bash "${SCRIPT_DIR}/ifevalg_opd.sh" "$@"

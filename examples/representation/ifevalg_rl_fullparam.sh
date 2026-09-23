@@ -27,6 +27,4 @@ export SAVE_VECTOR="${SAVE_VECTOR:-false}"
 # Save dir + exp name carry the learning rate (lr in the path).
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-IFEvalG-Qwen3-8B-IF-RL_fullparam_lr${ACTOR_LR}}"
 export DEFAULT_LOCAL_DIR="${DEFAULT_LOCAL_DIR:-${OPV_ROOT}/examples/ifevalg_rl/ifevalg_qwen2.5-7b-fullparam_lr${ACTOR_LR}}"
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/ifevalg_rl_fullparam.sh >ifevalg_rl_fullparam_1e-6.log 2>&1 &
 exec bash "${SCRIPT_DIR}/ifevalg_rl.sh" "$@"

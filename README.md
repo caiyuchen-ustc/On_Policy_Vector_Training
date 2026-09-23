@@ -5,8 +5,8 @@ and Alpha-Stabler on top of [verl](https://github.com/volcengine/verl).
 This repository accompanies **Learning to Steer, Steering to See: Unveiling the
 Geometry of RLVR in Large Language Models via Trainable Vectors**.
 
-The repository provides training scripts for four task domains, representation
-analysis, and principal-subspace monitoring and control.
+The repository provides training scripts for four task domains, trainable
+representation vectors, and principal-subspace monitoring and control.
 
 ## Layout
 
@@ -18,7 +18,6 @@ scripts/opd/                on-policy distillation entry point
 scripts/offpolicy/          teacher generation and offline distillation
 scripts/alpha_stabler/      online geometry monitoring and RL control
 scripts/train.py            shared configuration and CLI for all four domains
-analysis/                   training curves and representation geometry
 examples/representation/    experiment variants
 recipe/dapo/                DAPO trainer and configuration
 recipe/code_sandbox/        code reward execution service
@@ -127,16 +126,13 @@ bash scripts/offpolicy/run.sh science --method vector --lr 0.05 \
 Use `--teacher` for a different teacher. Offline training uses reverse-KL weighting
 on teacher-generated trajectories. Validation generates responses with the current student.
 
-## 4. Analysis and Alpha-Stabler
+## 4. Alpha-Stabler
 
-The [analysis scripts](analysis/README.md) cover training curves and representation
-geometry. Training logs validation metrics and PSI to `outputs/<run>/metrics.jsonl`.
+Training logs validation metrics and PSI to `outputs/<run>/metrics.jsonl`.
 
 ```bash
 bash scripts/alpha_stabler/run.sh
-python analysis/plot_metrics.py outputs/science-alpha-full/metrics.jsonl --list-keys
-python analysis/plot_metrics.py outputs/science-alpha-full/metrics.jsonl \
-  --keys alpha_stabler/psi alpha_stabler/active_layers
+bash scripts/alpha_stabler/run.sh --check
 ```
 
 Alpha-Stabler calibrates frozen principal bases, monitors actor/base activation

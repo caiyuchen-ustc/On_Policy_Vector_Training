@@ -75,4 +75,5 @@ python scripts/train.py alpha science \
   checkpoint directory. Include these files if copying a checkpoint elsewhere.
 
 Metrics include `alpha_stabler/psi`, `alpha_stabler/active_layers`, and per-layer
-PSI, EMA, warning/release thresholds, and flags. See `analysis/README.md` for plotting.
+PSI, EMA, warning/release thresholds, and flags. They are written to
+`outputs/<run>/metrics.jsonl` and to W&B when `--wandb` is enabled.

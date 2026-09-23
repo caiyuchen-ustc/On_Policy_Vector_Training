@@ -18,5 +18,4 @@ export STRATEGY=${STRATEGY:-fsdp2}
 export LR=${LR:-1e-5}
 export EXPERIMENT_NAME=${EXPERIMENT_NAME:-ifevalg-student-sft-fullparam_lr${LR}}
 
-# nohup bash ${OPV_ROOT}/examples/representation/sft_student_fullparam.sh >sft_student_fullparam.log 2>&1 &
 exec bash "${SCRIPT_DIR}/sft_student.sh" "$@"

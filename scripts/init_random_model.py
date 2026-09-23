@@ -54,10 +54,8 @@ def check_output_path(output_path: str):
 
 def check_configs(original_config: dict[str, Any], new_config: dict[str, Any]) -> bool:
     """
-    Check if the original config and new config are compatible.
-    This is a placeholder function; actual implementation may vary based on requirements.
+    Require matching model types and warn about unrecognized configuration keys.
     """
-    # Example check: ensure 'model_type' is the same
     if new_config.get("model_type", None) is not None and original_config.get("model_type") != new_config.get(
         "model_type"
     ):

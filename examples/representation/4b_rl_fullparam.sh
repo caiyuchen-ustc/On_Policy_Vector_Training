@@ -15,7 +15,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export LORA_RANK="${LORA_RANK:-0}"
 export ENABLE_TRAINABLE_TOKEN_VECTOR="${ENABLE_TRAINABLE_TOKEN_VECTOR:-false}"
 
-# Keep baseline RL setup close to your reference script.
+# Full-parameter RL defaults.
 export ACTOR_LR="${ACTOR_LR:-1e-6}"
 export TRAIN_PROMPT_BSZ="${TRAIN_PROMPT_BSZ:-128}"
 export N_RESP_PER_PROMPT="${N_RESP_PER_PROMPT:-16}"
@@ -27,6 +27,4 @@ export SAVE_VECTOR="${SAVE_VECTOR:-false}"
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-DAPO-Qwen3-4B-RL_fullparam_lr${ACTOR_LR}}"
 export LOCAL_DIR_BASE="${LOCAL_DIR_BASE:-${OPV_ROOT}/examples/rl/repre_qwen3-4b-fullparam_lr${ACTOR_LR}}"
 #export LOCAL_DIR_BASE="${LOCAL_DIR_BASE:-${OPV_ROOT}/examples/rl/repre_qwen3-4b-fullparam_lr${ACTOR_LR}DAPO_n16}"
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/4b_rl_fullparam.sh >4b_rl_fullparam1e-6_16.log 2>&1 &
 exec bash "${SCRIPT_DIR}/4b_rl.sh" "$@"

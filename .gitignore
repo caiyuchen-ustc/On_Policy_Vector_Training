@@ -134,6 +134,7 @@ outputs
 /data/
 /models/
 /artifacts/
+/analysis/
 *.whl
 *.whl.*
 *.log.*

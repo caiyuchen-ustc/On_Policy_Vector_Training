@@ -38,6 +38,4 @@ export TRAINABLE_TOKEN_VECTOR_FORCE_ALL_TOKENS="${TRAINABLE_TOKEN_VECTOR_FORCE_A
 SAVE_VECTOR=${SAVE_VECTOR:-true}
 SAVE_VECTOR_BASE_DIR=${SAVE_VECTOR_BASE_DIR:-"${OPV_ROOT}/repre/opd/repre_qwen3-4b-opd_single/trainable_vectors"}
 
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-#nohup sh ${OPV_ROOT}/examples/representation/4bopd_single.sh >4bopd_32-33single2.log 2>&1 &
 exec bash "${SCRIPT_DIR}/4bopd.sh" "$@"

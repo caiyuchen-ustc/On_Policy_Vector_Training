@@ -10,13 +10,9 @@ fi
 
 # set -x
 # export PYTHONUNBUFFERED=1
-# # export TMPDIR="/apdcephfs_zwfy3/share_302867165/ewencai/c"
 export RAY_DISABLE_MEMORY_MONITOR=1
 export USED_MODEL="no_api"
 export NCCL_P2P_DISABLE=0
-# export RAY_TMPDIR=/apdcephfs_zwfy3/share_302867165/ewencai/ray_tmp
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-#nohup sh ${OPV_ROOT}/examples/representation/4bopd.sh >opd4bre.log 2>&1 &
 AIME24_TEST_FILE=${AIME24_TEST_FILE:-"${OPV_LEGACY_DATA_ROOT}/G-OPD-Training-Data/AIME2024/test.parquet"}
 AIME25_TEST_FILE=${AIME25_TEST_FILE:-"${OPV_LEGACY_DATA_ROOT}/G-OPD-Training-Data/AIME2025/test.parquet"}
 

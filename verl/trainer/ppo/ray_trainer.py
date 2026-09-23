@@ -1246,8 +1246,7 @@ class RayPPOTrainer:
                 metrics["filter_wrong/fallback_keep_all"] = 1
                 metrics["filter_wrong/fallback_kept"] = len(repeated_batch.batch)
 
-                # 原始 repeated_batch 本身一定和 gen_batch_output 对齐，
-                # 且你确定它一定可以被 world_size 整除，所以直接返回即可
+                # The original repeated batch is already aligned across workers.
                 return repeated_batch, gen_batch_output, metrics
 
             raise RuntimeError(msg)

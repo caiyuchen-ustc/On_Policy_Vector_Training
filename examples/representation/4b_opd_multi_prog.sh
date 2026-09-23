@@ -55,7 +55,5 @@ export TRAINABLE_TOKEN_VECTOR_FREEZE_PRIMARY_AFTER_WARMUP="${TRAINABLE_TOKEN_VEC
 
 # ----- 产物存到 prog 专属目录 -----
 export SAVE_VECTOR_BASE_DIR="${SAVE_VECTOR_BASE_DIR:-${OPV_ROOT}/repre/opd/repre_qwen3-4b-opd_multi_prog/trainable_vectors}"
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/4b_opd_multi_prog.sh >4bopd_multi_prog.log 2>&1 &
 # 其余（关 GC、fp32、force_all_tokens=true、采样等）沿用 4b_opd_multi.sh 的默认。
 exec bash "${SCRIPT_DIR}/4b_opd_multi.sh" "$@"

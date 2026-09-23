@@ -40,6 +40,4 @@ export USE_DYNAMIC_BSZ=${USE_DYNAMIC_BSZ:-true}
 export SAVE_VECTOR=${SAVE_VECTOR:-false}
 
 export EXPERIMENT_NAME=${EXPERIMENT_NAME:-deepseek1p5b_rl_singlemlp${TRAIN_MLP_LAYER_IDX}_lr${ACTOR_LR}}
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/deepseek1p5b_rl_singlemlp.sh >1p5b_rl_singlemlp.log 2>&1 &
 exec bash "${SCRIPT_DIR}/deepseek1p5b_rl.sh" "$@"

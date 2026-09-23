@@ -75,5 +75,4 @@ export SAVE_VECTOR_BASE_DIR=${SAVE_VECTOR_BASE_DIR:-${OPV_ROOT}/repre/ifevalg_rl
 # 模型冻结、只训向量，激活显存需求小，不需要 GC。
 GC_OVERRIDE="${GC_OVERRIDE:-actor_rollout_ref.model.enable_gradient_checkpointing=False}"
 
-# nohup bash ${OPV_ROOT}/examples/representation/ifevalg_rl_multi.sh >ifevalg_rl_multi.log 2>&1 &
 exec bash "${SCRIPT_DIR}/ifevalg_rl.sh" "$@" ${GC_OVERRIDE}

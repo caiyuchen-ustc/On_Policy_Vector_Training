@@ -31,7 +31,7 @@ export VLLM_ENFORCE_EAGER="${VLLM_ENFORCE_EAGER:-false}"
 # hard-coded TP=2 in 4bopd.sh. Override via GEN_TP if needed.
 export GEN_TP="${GEN_TP:-1}"
 
-# Keep loss settings aligned with your full-parameter/vector setup.
+# Shared loss settings across update parameterizations.
 export ACTOR_ONLY_REVERSE_KL_ADVANTAGES="${ACTOR_ONLY_REVERSE_KL_ADVANTAGES:-true}"
 
 # LoRA only trains a small adapter (scaled by alpha/rank), so it needs a much
@@ -46,8 +46,6 @@ export SAVE_VECTOR="${SAVE_VECTOR:-false}"
 # Optional convenience defaults for naming/outputs.
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-repre_qwen3-4b_lora_r${LORA_RANK}_lr${ACTOR_LR}}"
 export LOCAL_DIR_BASE="${LOCAL_DIR_BASE:-${OPV_ROOT}/examples/g_opd/repre_qwen3-4b-opd-lora_lr${ACTOR_LR}}"
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/4bopd_lora8.sh >4bopd_lora8.log 2>&1 &
 # tensor_model_parallel_size is hard-coded in 4bopd.sh, so override it on the CLI
 # (caller args still win since "$@" comes last).
 exec bash "${SCRIPT_DIR}/4bopd.sh" \

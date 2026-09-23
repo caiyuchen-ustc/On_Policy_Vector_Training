@@ -50,7 +50,5 @@ export TRAINABLE_TOKEN_VECTOR_FREEZE_PRIMARY_AFTER_WARMUP="${TRAINABLE_TOKEN_VEC
 
 # ----- 产物存到 raw 专属目录 -----
 export SAVE_VECTOR_BASE_DIR="${SAVE_VECTOR_BASE_DIR:-${OPV_ROOT}/repre/ifevalg_opd_multi_raw/trainable_vectors}"
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/ifevalg_opd_multi_raw.sh >ifevalg_opd_multi_raw__1e-1.log 2>&1 &
 # 其余（关 GC、fp32、force_all_tokens=true）沿用 ifevalg_opd_multi.sh 的默认。
 exec bash "${SCRIPT_DIR}/ifevalg_opd_multi.sh" "$@"

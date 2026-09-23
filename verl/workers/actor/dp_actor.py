@@ -974,12 +974,9 @@ class DataParallelPPOActor(BasePPOActor):
                             reverse_kl = old_log_prob - model_inputs["ref_log_prob"]
                         advantages = (- (reverse_kl))
                     advantages = torch.clamp(advantages, min=-2, max=2)
-                    # if model_inputs["advantages"].sum() < 0:
-                    #     advantages[:,:] = 0 
                     # gpg -> verl.trainer.ppo.core_algos.compute_policy_loss_gpg
                     # clip_cov -> verl.trainer.ppo.core_algos.compute_policy_loss_clip_cov
 
-                    # breakpoint()
                     policy_loss_fn = get_policy_loss_fn(loss_mode)
 
                     # Compute policy loss (any function is expected to return 2 values)

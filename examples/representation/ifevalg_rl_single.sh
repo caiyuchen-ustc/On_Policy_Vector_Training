@@ -48,6 +48,4 @@ export OFFLOAD=${OFFLOAD:-false}
 LAYER_TAG=${TRAINABLE_TOKEN_VECTOR_LAYERS//:/-}
 export EXPERIMENT_NAME=${EXPERIMENT_NAME:-IFEvalG-Qwen3-8B-IF-RL_singlev_layers${LAYER_TAG}_lr${ACTOR_LR}}
 export DEFAULT_LOCAL_DIR=${DEFAULT_LOCAL_DIR:-${OPV_ROOT}/examples/ifevalg_rl/ifevalg_qwen2.5-7b-singlev_layers${LAYER_TAG}_lr${ACTOR_LR}}
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/ifevalg_rl_single.sh >ifevalg_rl_single.log 2>&1 &
 exec bash "${SCRIPT_DIR}/ifevalg_rl.sh" "$@"

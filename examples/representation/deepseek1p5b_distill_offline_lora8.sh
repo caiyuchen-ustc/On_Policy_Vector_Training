@@ -42,5 +42,4 @@ export MODEL_USE_SHM="${MODEL_USE_SHM:-true}"
 export ACTOR_LR="${ACTOR_LR:-1e-5}"
 export EXPERIMENT_NAME="${EXPERIMENT_NAME:-DeepSeek-1.5B-SciKnowEval-OfflineDistill_lora_r${LORA_RANK}_lr${ACTOR_LR}}"
 
-# nohup bash ${OPV_ROOT}/examples/representation/deepseek1p5b_distill_offline_lora8.sh >deepseek1p5b_distill_offline_lora8.log 2>&1 &
 exec bash "${SCRIPT_DIR}/deepseek1p5b_distill_offline.sh" "$@"

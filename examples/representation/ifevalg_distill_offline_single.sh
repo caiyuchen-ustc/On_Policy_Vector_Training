@@ -33,6 +33,4 @@ export OFFLOAD=${OFFLOAD:-false}
 
 LAYER_TAG=${TRAINABLE_TOKEN_VECTOR_LAYERS//:/-}
 export EXPERIMENT_NAME=${EXPERIMENT_NAME:-IFEvalG-Qwen3-4B-IF-OfflineDistill_singlev_layers${LAYER_TAG}_lr${ACTOR_LR}}
-# RAY_DEBUG=legacy ray start --head --dashboard-host=0.0.0.0 --ray-debugger-external
-# nohup sh ${OPV_ROOT}/examples/representation/ifevalg_distill_offline_single.sh >ifevalg_distill_offline_single1e-2.log 2>&1 &
 exec bash "${SCRIPT_DIR}/ifevalg_distill_offline.sh" "$@"

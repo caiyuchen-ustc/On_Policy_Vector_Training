@@ -52,7 +52,7 @@ separate Hub configurations to support their different Arrow schemas.
 
 | Task | Dataset | Training rows | Evaluation | Teacher |
 | --- | --- | ---: | --- | --- |
-| Math | [OPV-Math](https://huggingface.co/datasets/caiyuchen/OPV-Math) | 14,116 DAPO teacher / 57,046 DeepMath distillation | AIME2024: 30; AIME2025: 30 | [Qwen3-4B Math RL](https://huggingface.co/caiyuchen/Qwen3-4B-Non-Thinking-Math-RL) |
+| Math | [OPV-Math](https://huggingface.co/datasets/caiyuchen/OPV-Math) | 14,116 | AIME2024: 30; AIME2025: 30 | [Qwen3-4B Math RL](https://huggingface.co/caiyuchen/Qwen3-4B-Non-Thinking-Math-RL) |
 | Science | [OPV-Science](https://huggingface.co/datasets/caiyuchen/OPV-Science) | 3,901 | SciKnowEval: 434 | [DeepSeek-Qwen 1.5B Science RL](https://huggingface.co/caiyuchen/Qwen2.5-1.5B-Dpsk-Science-RL) |
 | Code | [OPV-Code](https://huggingface.co/datasets/caiyuchen/OPV-Code) | 25,276 | LiveCodeBench v5: 880; Eurus: 1,024 | [Qwen3-8B Code RL](https://huggingface.co/caiyuchen/Qwen3-8B-Code-RL) |
 | Instruction | [OPV-Instruction](https://huggingface.co/datasets/caiyuchen/OPV-Instruction) | 16,575 | IFBench: 300 | [DeepSeek-Qwen 7B IF RL](https://huggingface.co/caiyuchen/Qwen2.5-7B-Dpsk-Instruct-Following-RL) |

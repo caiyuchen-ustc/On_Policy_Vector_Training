@@ -253,8 +253,18 @@ class FileLogger:
 
     def log(self, data, step):
         data = {"step": step, "data": data}
-        self.fp.write(json.dumps(data) + "\n")
+        self.fp.write(json.dumps(data, default=self._json_value) + "\n")
         self.fp.flush()
+
+    @staticmethod
+    def _json_value(value):
+        # Trainer metrics can contain Torch tensors and NumPy scalars/arrays.
+        # Detach tensors before conversion so logging never retains a graph.
+        if hasattr(value, "detach"):
+            value = value.detach().cpu()
+        if hasattr(value, "tolist"):
+            return value.tolist()
+        raise TypeError(f"Unsupported metric type: {type(value).__name__}")
 
     def finish(self):
         self.fp.close()

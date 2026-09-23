@@ -5,10 +5,8 @@ and Alpha-Stabler on top of [verl](https://github.com/volcengine/verl).
 This repository accompanies **Learning to Steer, Steering to See: Unveiling the
 Geometry of RLVR in Large Language Models via Trainable Vectors**.
 
-The existing experiment datasets, prompts, reward functions and off-policy objective
-are preserved. This is a focused code release, not a claim that every experiment in
-the manuscript has been independently rerun. See [validation](docs/validation.md)
-for the checks performed and [analysis](analysis/README.md) for figure provenance.
+The repository provides training scripts for four task domains, representation
+analysis, and principal-subspace monitoring and control.
 
 ## Layout
 
@@ -20,8 +18,8 @@ scripts/opd/                on-policy distillation entry point
 scripts/offpolicy/          teacher generation and offline distillation
 scripts/alpha_stabler/      online geometry monitoring and RL control
 scripts/train.py            shared configuration and CLI for all four domains
-analysis/                   existing plots, geometry analysis, actual-log plotting
-examples/representation/    original experimental variants (sanitized)
+analysis/                   training curves and representation geometry
+examples/representation/    experiment variants
 recipe/dapo/                DAPO trainer and configuration
 recipe/code_sandbox/        code reward execution service
 verl/                      training library, steering hooks and Alpha-Stabler
@@ -30,10 +28,9 @@ tests/opv/                  focused CPU checks
 
 ## Installation
 
-Use a Python 3.10+ environment with a compatible CUDA/PyTorch/vLLM/FlashAttention
-stack. The experiments use FSDP and synchronous vLLM; the original working training
-environment is preferable to upgrading the entire stack. See the supplied `docker/`
-images and [upstream installation](https://verl.readthedocs.io/en/latest/start/install.html).
+Use Python 3.10+ with compatible CUDA, PyTorch, vLLM and FlashAttention versions.
+Training uses FSDP and synchronous vLLM. See the supplied `docker/` images and
+[installation guide](https://verl.readthedocs.io/en/latest/start/install.html).
 
 ```bash
 pip install -e .
@@ -42,21 +39,17 @@ pip install -r requirements-opv.txt
 python -m nltk.downloader punkt punkt_tab averaged_perceptron_tagger_eng
 ```
 
-Model and dataset downloads use normal Hugging Face authentication (`HF_TOKEN` if
-needed). W&B is optional (`--wandb`, with your own `WANDB_API_KEY`). There are no
-embedded credentials or forced cluster proxy/network settings in the new launchers.
+Model and dataset downloads use Hugging Face authentication (`HF_TOKEN` if needed).
+Enable W&B with `--wandb` and set `WANDB_API_KEY` in your environment.
 
 ## Data and pretrained teachers
 
-Model weights, training/evaluation datasets, and training checkpoints are not
-distributed through this GitHub repository. Use the Hugging Face repositories
-listed below. The training launchers load the public model IDs by default, and the
-dataset download command retrieves the original Parquet files locally.
+Download models and datasets from the Hugging Face repositories below. GitHub
+contains the code and documentation; weights, datasets and checkpoints stay outside
+the repository. Launchers use the public model IDs by default.
 
-All published Parquet files are **byte-for-byte copies of the original experiment
-files**: columns, nested structures, row order, prompts and labels are unchanged.
-Train/evaluation files have separate Hub configurations because their existing Arrow
-schemas differ. The launcher uses the downloaded files directly.
+Parquet files retain their original format and contents. Train/evaluation files have
+separate Hub configurations to support their different Arrow schemas.
 
 | Task | Dataset | Training rows | Evaluation | Teacher |
 | --- | --- | ---: | --- | --- |
@@ -70,12 +63,9 @@ python scripts/data/manage.py download --pins configs/datasets.json
 python scripts/data/verify_hub.py
 ```
 
-To use a pre-existing data directory, pass `--train-file` and `--val-files`. To
-republish your own copies, `scripts/data/manage.py prepare --source /path/to/original/data`
-only copies files and writes manifests; `publish` performs the separately requested
-upload. Original SciKnowEval splits contain one exact prompt overlap, disclosed in
-the manifest and preserved. The instruction files are the existing Nemotron-IF and
-IFBench data; no new 80/20 split was created.
+Use `--train-file` and `--val-files` for local datasets. Dataset cards and manifests
+document the sources, splits and file hashes. `scripts/data/manage.py prepare`
+copies original files into a staging directory; `publish` uploads those files.
 
 ## 1. RL teacher training
 
@@ -134,26 +124,26 @@ bash scripts/offpolicy/run.sh science --method vector --lr 0.05 \
   --offline-data outputs/science-generate-full/teacher_sft.parquet
 ```
 
-Use `--teacher` for a different teacher. Validation still generates responses with
-the current student. The historical offline path preserves reverse-KL weighting
-on teacher trajectories; it is not silently replaced with a different NLL objective.
+Use `--teacher` for a different teacher. Offline training uses reverse-KL weighting
+on teacher-generated trajectories. Validation generates responses with the current student.
 
 ## 4. Analysis and Alpha-Stabler
 
-The existing [analysis scripts](analysis/README.md) remain available. New runs log
-actual measurements to `outputs/<run>/metrics.jsonl`, including validation and PSI.
+The [analysis scripts](analysis/README.md) cover training curves and representation
+geometry. Training logs validation metrics and PSI to `outputs/<run>/metrics.jsonl`.
 
 ```bash
-bash scripts/alpha_stabler/run.sh science --method full --steps 2000
+bash scripts/alpha_stabler/run.sh
 python analysis/plot_metrics.py outputs/science-alpha-full/metrics.jsonl --list-keys
 python analysis/plot_metrics.py outputs/science-alpha-full/metrics.jsonl \
   --keys alpha_stabler/psi alpha_stabler/active_layers
 ```
 
 Alpha-Stabler calibrates frozen principal bases, monitors actor/base activation
-shifts and projects backward gradients only when intrusion persists. See
-[implementation and limitations](docs/alpha_stabler.md). CPU checks and a tiny
-two-H20 FSDP smoke test pass; LLM stabilization performance and overhead remain unmeasured.
+shifts and projects backward gradients when intrusion persists. See the
+[Alpha-Stabler guide](docs/alpha_stabler.md) for configuration and checkpoint handling.
+The default command selects SciKnowEval and downloads missing model/data files.
+Use `--check` to validate the training environment and inputs before launching.
 
 ## Configuration and checks
 
@@ -168,7 +158,6 @@ python -m pytest -q tests/opv
 python scripts/check_repository.py
 ```
 
-Training defaults are practical entry points based on the original scripts; individual
-historical runs vary. Their original variants remain in `examples/representation/`.
-Upstream implementation copyrights and Apache-2.0 license are preserved; the old
-framework README is at [docs/UPSTREAM_README.md](docs/UPSTREAM_README.md).
+See [testing](docs/validation.md) for test coverage and GPU checks, and
+`examples/representation/` for individual experiment settings. The verl foundation
+retains its Apache-2.0 license and [upstream documentation](docs/UPSTREAM_README.md).

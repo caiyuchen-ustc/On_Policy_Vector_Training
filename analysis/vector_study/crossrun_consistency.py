@@ -6,13 +6,15 @@ App. C.6: 跨-run 典范子空间一致性。
   - participation ratio(PR): 堆叠SVD的有效维度, 反映该层RL增益占几维子空间
 支撑正文 X.4 "每层1-2维典范子空间"论断。
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re, itertools, csv
 from collections import defaultdict
 import torch
 
-VR="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/opd/repre_qwen3-4b-opd/trainable_vectors"
-OUT="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
-FIG="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/figs"
+VR=artifact_path('repre/opd/repre_qwen3-4b-opd/trainable_vectors')
+OUT=project_path('analysis/vector_study/out')
+FIG=project_path('analysis/vector_study/figs')
 
 def main():
     per=defaultdict(list)

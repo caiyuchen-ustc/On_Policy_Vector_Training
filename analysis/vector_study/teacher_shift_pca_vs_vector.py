@@ -12,15 +12,17 @@ v0 IS the dominant direction along which the teacher's weights move the residual
 Teacher-forcing on identical token ids so base/teacher positions align.
 Output: out/teacher_shift_pca_vs_vector.csv
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, csv
 import torch
 import numpy as np
 
-BASE = "/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/DeepSeek-R1-Distill-Qwen-7B"
-TEACHER = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/examples/ifevalg_rl/ifevalg_qwen2.5-7b-fullparam_lr1e-6/global_step_825/hf_model"
-VEC_DIR = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/examples/ifevalg_offline_distill/trainable_vectors/singlev_layers8-25_lr5e-2"
-DATA = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/ifevalg/ifevalg_train.parquet"
-OUT = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
+BASE = model_path('DeepSeek-R1-Distill-Qwen-7B')
+TEACHER = artifact_path('examples/ifevalg_rl/ifevalg_qwen2.5-7b-fullparam_lr1e-6/global_step_825/hf_model')
+VEC_DIR = artifact_path('examples/ifevalg_offline_distill/trainable_vectors/singlev_layers8-25_lr5e-2')
+DATA = data_path('ifevalg/ifevalg_train.parquet')
+OUT = project_path('analysis/vector_study/out')
 os.makedirs(OUT, exist_ok=True)
 V0_STEP, V1_STEP = 100, 241
 

@@ -7,10 +7,12 @@
   - actor/entropy, actor/pg_loss          (训练信号)
 按 层范围 分组, 对比高层 vs 中低层的 (a)分数轨迹 (b)norm演化。
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, re, glob, csv, json
 from collections import defaultdict
 
-VERL="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl"
+VERL=project_path()
 OUT=os.path.join(VERL,"analysis/vector_study/out"); FIG=os.path.join(VERL,"analysis/vector_study/figs")
 
 # 只挑 qwen3-4b single 层实验(有完整轨迹的)

@@ -1,0 +1,6 @@
+{
+  "math": {"base": "Qwen/Qwen3-4B", "teacher": "caiyuchen/Qwen3-4B-Non-Thinking-Math-RL", "revision": "0d3c95d6f1239f94e5a5a17fc44050a69e18629d", "checkpoint_step": 500},
+  "science": {"base": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B", "teacher": "caiyuchen/Qwen2.5-1.5B-Dpsk-Science-RL", "revision": "0e4f6662aee6286ca376b4140a7f323fd6e5d5c0", "checkpoint_step": 820},
+  "code": {"base": "Qwen/Qwen3-8B", "teacher": "caiyuchen/Qwen3-8B-Code-RL", "revision": "c80c0c97cf7cfeb35a5a8714b4ed7685a70b568e", "checkpoint_step": 300},
+  "instruction": {"base": "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B", "teacher": "caiyuchen/Qwen2.5-7B-Dpsk-Instruct-Following-RL", "revision": "262165dfbcaa187d2853ef07602278a86164e86c", "checkpoint_step": 825}
+}

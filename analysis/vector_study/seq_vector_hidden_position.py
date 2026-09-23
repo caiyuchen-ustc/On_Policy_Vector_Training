@@ -17,14 +17,16 @@ Usage:
   python3 seq_vector_hidden_position.py --run physics
   (runs: mixed, physics, chemistry, biology, material)
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re, csv, argparse
 import torch
 import numpy as np
 
-MODEL_PATH = "/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/DeepSeek-R1-Distill-Qwen-1.5B"
-VEC_BASE = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/examples/deepseek1p5b_offline_distill/trainable_vectors"
-DATA = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/sciknoweval/sciknoweval_train.parquet"
-OUT = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
+MODEL_PATH = model_path('DeepSeek-R1-Distill-Qwen-1.5B')
+VEC_BASE = artifact_path('examples/deepseek1p5b_offline_distill/trainable_vectors')
+DATA = data_path('sciknoweval/sciknoweval_train.parquet')
+OUT = project_path('analysis/vector_study/out')
 os.makedirs(OUT, exist_ok=True)
 
 RUNS = {

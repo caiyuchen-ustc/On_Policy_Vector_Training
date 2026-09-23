@@ -9,6 +9,8 @@ monotonically from ~0.15 to 1.0, but DEEPER layers converge FASTER (lead shallow
 
 Real data (layers 5-15, physics seqbasis run). Output: figs/opd_v0_layer_traj.svg
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re
 import numpy as np
 import torch
@@ -21,7 +23,7 @@ from matplotlib.colors import Normalize
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIG = os.path.join(HERE, "figs", "opd_v0_layer_traj.svg")
-BASE = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/examples/deepseek1p5b_offline_distill/trainable_vectors/seqbasis_physics_layers5-15_lr5e-2"
+BASE = artifact_path('examples/deepseek1p5b_offline_distill/trainable_vectors/seqbasis_physics_layers5-15_lr5e-2')
 LY = list(range(5, 16))
 V0_END = 100     # v0 training window is steps 1..100
 

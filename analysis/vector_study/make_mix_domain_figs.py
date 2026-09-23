@@ -12,6 +12,8 @@ Figures:
 All values computed from the real trained vectors (step-100 v0, layers 5-15).
 Output: figs/opd_mix_{dataweight,domainsim,decomp}.svg
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, itertools
 import numpy as np
 import torch
@@ -20,7 +22,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-BASE_DIR = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/examples/deepseek1p5b_offline_distill/trainable_vectors"
+BASE_DIR = artifact_path('examples/deepseek1p5b_offline_distill/trainable_vectors')
 DIRS = {"mixed": "singlev_layers5-15_lr5e-2",
         "physics": "seqbasis_physics_layers5-15_lr5e-2",
         "chemistry": "seqbasis_chemistry_layers5-15_lr5e-2",

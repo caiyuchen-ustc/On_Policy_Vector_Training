@@ -1,0 +1,17 @@
+# Install a CUDA-compatible torch/vLLM/flash-attn stack first; see README.
+datasets>=3.0
+pyarrow>=19.0.0
+huggingface-hub>=0.30
+matplotlib>=3.8
+scipy
+scikit-learn
+math-verify
+absl-py
+langdetect
+nltk
+emoji
+syllapy
+immutabledict
+fastapi
+uvicorn
+pytest

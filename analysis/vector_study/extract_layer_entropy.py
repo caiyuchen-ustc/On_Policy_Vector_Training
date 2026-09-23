@@ -17,14 +17,16 @@ dominant "rogue" component otherwise flattens the curve.
 Output: analysis/vector_study/cache/layer_entropy_<domain>.pt   (keys: erank, erank_notop, S, S_notop)
 Usage:  python extract_layer_entropy.py --domain physics --max_prompts 60
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, argparse
 import numpy as np
 import torch
 import pandas as pd
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-MODEL_PATH = "/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/DeepSeek-R1-Distill-Qwen-1.5B"
-DATA_ROOT = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/sciknoweval"
+MODEL_PATH = model_path('DeepSeek-R1-Distill-Qwen-1.5B')
+DATA_ROOT = data_path('sciknoweval')
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(HERE, "cache")
 LAYERS = list(range(5, 16))
@@ -67,7 +69,7 @@ def main():
     args = ap.parse_args()
 
     os.makedirs(CACHE, exist_ok=True)
-    df = pd.read_parquet(os.path.join(DATA_ROOT, "sciknoweval_validation.parquet"))
+    df = pd.read_parquet(data_path("sciknoweval/sciknoweval_validation.parquet"))
     df = df[df["extra_info"].apply(lambda e: e.get("domain") == args.domain)]
     df = df.head(args.max_prompts).reset_index(drop=True)
     print(f"[{args.domain}] {len(df)} prompts")

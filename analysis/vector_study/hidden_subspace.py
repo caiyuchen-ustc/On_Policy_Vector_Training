@@ -16,6 +16,8 @@
      若 v 落在 hidden 的低方差"尾空间"(前k能量≈随机甚至更低) -> 操控一个原本不活跃的稀有方向 (高层可能这样)
      若 v 落在高方差"主空间"(前k能量>>随机) -> 顺着模型本来就在用的表征方向 (中低层的"模式")
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re, csv, json, argparse
 import torch
 import numpy as np
@@ -23,22 +25,22 @@ import numpy as np
 # 两个模型可选, 用 MODEL_TAG 环境变量或 --model 切换
 MODELS={
     "qwen3-4b": dict(
-        path="/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/Qwen3-4B",
-        vec_root="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/opd/repre_qwen3-4b-opd/trainable_vectors",
-        data="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/G-OPD-Training-Data/DeepMath-103K/train_filtered_level6.parquet",
+        path=model_path('Qwen3-4B'),
+        vec_root=artifact_path('repre/opd/repre_qwen3-4b-opd/trainable_vectors'),
+        data=data_path('G-OPD-Training-Data/DeepMath-103K/train_filtered_level6.parquet'),
     ),
     "deepseek7b": dict(
-        path="/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/DeepSeek-R1-Distill-Qwen-7B",
-        vec_root="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/ifevalg_opd/trainable_vectors",
-        data="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/ifevalg/ifevalg_train.parquet",
+        path=model_path('DeepSeek-R1-Distill-Qwen-7B'),
+        vec_root=artifact_path('repre/ifevalg_opd/trainable_vectors'),
+        data=data_path('ifevalg/ifevalg_train.parquet'),
     ),
 }
 _TAG=os.environ.get("MODEL_TAG","qwen3-4b")
 MODEL_PATH=MODELS[_TAG]["path"]
 VEC_ROOT=MODELS[_TAG]["vec_root"]
 DATA=MODELS[_TAG]["data"]
-OUT="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
-FIG="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/figs"
+OUT=project_path('analysis/vector_study/out')
+FIG=project_path('analysis/vector_study/figs')
 os.makedirs(OUT,exist_ok=True); os.makedirs(FIG,exist_ok=True)
 
 

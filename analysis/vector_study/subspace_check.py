@@ -8,12 +8,14 @@
 用法:
   python3 subspace_check.py --glob 'repre/opd/repre_qwen3-4b-opd_multi/trainable_vectors/multiv*'
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re, csv, argparse
 import torch
 
-ROOT = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl"
-OUT = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
-FIG = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/figs"
+ROOT = artifact_path()
+OUT = project_path('analysis/vector_study/out')
+FIG = project_path('analysis/vector_study/figs')
 os.makedirs(OUT, exist_ok=True); os.makedirs(FIG, exist_ok=True)
 
 

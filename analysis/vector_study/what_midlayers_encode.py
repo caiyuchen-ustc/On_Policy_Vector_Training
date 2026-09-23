@@ -13,21 +13,23 @@
     - 高层: push-through 和 logit-lens 一致 (后续层≈恒等, 就是token操纵)
     - 中低层: 若 logit-lens 是乱码但 push-through 是有语义token -> 证明是"经过计算"的模式
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re, csv, json
 from collections import Counter, defaultdict
 import torch
 
 MODELS={
     "qwen3-4b": dict(
-        path="/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/Qwen3-4B",
-        vec_root="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/opd/repre_qwen3-4b-opd/trainable_vectors",
-        data="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/G-OPD-Training-Data/DeepMath-103K/train_filtered_level6.parquet",
+        path=model_path('Qwen3-4B'),
+        vec_root=artifact_path('repre/opd/repre_qwen3-4b-opd/trainable_vectors'),
+        data=data_path('G-OPD-Training-Data/DeepMath-103K/train_filtered_level6.parquet'),
         probe=(1,3,7,10,15,20,24,27,30,33,34),
     ),
     "deepseek7b": dict(
-        path="/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/DeepSeek-R1-Distill-Qwen-7B",
-        vec_root="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/ifevalg_opd/trainable_vectors",
-        data="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/ifevalg/ifevalg_train.parquet",
+        path=model_path('DeepSeek-R1-Distill-Qwen-7B'),
+        vec_root=artifact_path('repre/ifevalg_opd/trainable_vectors'),
+        data=data_path('ifevalg/ifevalg_train.parquet'),
         probe=(1,3,7,10,14,17,20,23,25,26,27),
     ),
 }
@@ -35,7 +37,7 @@ _TAG=os.environ.get("MODEL_TAG","qwen3-4b")
 MODEL_PATH=MODELS[_TAG]["path"]
 VEC_ROOT=MODELS[_TAG]["vec_root"]
 DATA=MODELS[_TAG]["data"]
-OUT="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
+OUT=project_path('analysis/vector_study/out')
 os.makedirs(OUT,exist_ok=True)
 
 N_PROMPTS=24

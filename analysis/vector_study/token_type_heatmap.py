@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+r"""
 补充1: 按 token 类型统计每层向量对齐的 token, 画"中低层偏结构 vs 高层偏反思词"的热力图。
 数据源: 直接复用 what_midlayers_encode.py 的前向 (重新收集 hidden), 对每层取 top-200 激活 token,
 分类到几大类, 算各类占比 vs 层深。
@@ -10,22 +10,24 @@
   math       : 数学符号/概念     单字符符号 = + - ^ _ { } \ ( [ 及 frac/sqrt/mathbb/matrix/metric/fiber/smooth/algebra/topology/bounded/canonical/product...
   other      : 其余 (自然语言实词/子词碎片)
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re, csv
 from collections import defaultdict
 import torch
 
 MODELS={
- "qwen3-4b":dict(path="/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/Qwen3-4B",
-   vec_root="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/opd/repre_qwen3-4b-opd/trainable_vectors",
-   data="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/G-OPD-Training-Data/DeepMath-103K/train_filtered_level6.parquet"),
- "deepseek7b":dict(path="/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/DeepSeek-R1-Distill-Qwen-7B",
-   vec_root="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/ifevalg_opd/trainable_vectors",
-   data="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/ifevalg/ifevalg_train.parquet"),
+ "qwen3-4b":dict(path=model_path('Qwen3-4B'),
+   vec_root=artifact_path('repre/opd/repre_qwen3-4b-opd/trainable_vectors'),
+   data=data_path('G-OPD-Training-Data/DeepMath-103K/train_filtered_level6.parquet')),
+ "deepseek7b":dict(path=model_path('DeepSeek-R1-Distill-Qwen-7B'),
+   vec_root=artifact_path('repre/ifevalg_opd/trainable_vectors'),
+   data=data_path('ifevalg/ifevalg_train.parquet')),
 }
 _TAG=os.environ.get("MODEL_TAG","qwen3-4b")
 MODEL_PATH=MODELS[_TAG]["path"]; VEC_ROOT=MODELS[_TAG]["vec_root"]; DATA=MODELS[_TAG]["data"]
-OUT="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
-FIG="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/figs"
+OUT=project_path('analysis/vector_study/out')
+FIG=project_path('analysis/vector_study/figs')
 N_PROMPTS=24; MAX_TOK=200; TOPK=200
 
 REFLECT={"wait","but","hmm","alternatively","perhaps","maybe","however","okay","ok","alright",

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """汇总出图: 验证 高层向量->输出token操纵, 中低层->内部模式 的假设。"""
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, csv
 from collections import defaultdict
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-OUT = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
-FIG = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/figs"
+OUT = project_path('analysis/vector_study/out')
+FIG = project_path('analysis/vector_study/figs')
 os.makedirs(FIG, exist_ok=True)
 
 

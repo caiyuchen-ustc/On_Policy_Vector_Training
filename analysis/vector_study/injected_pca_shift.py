@@ -25,27 +25,29 @@ Env: MODEL_TAG=qwen3-4b (default) | deepseek7b
 Rerun:  python injected_pca_shift.py
 Output: out/injected_pca_shift_<tag>.csv  (+ printed summary)
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re, csv
 import torch
 import numpy as np
 
 MODELS = {
     "qwen3-4b": dict(
-        path="/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/Qwen3-4B",
-        vec_root="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/opd/repre_qwen3-4b-opd/trainable_vectors",
-        data="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/G-OPD-Training-Data/DeepMath-103K/train_filtered_level6.parquet",
+        path=model_path('Qwen3-4B'),
+        vec_root=artifact_path('repre/opd/repre_qwen3-4b-opd/trainable_vectors'),
+        data=data_path('G-OPD-Training-Data/DeepMath-103K/train_filtered_level6.parquet'),
     ),
     "deepseek7b": dict(
-        path="/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/DeepSeek-R1-Distill-Qwen-7B",
-        vec_root="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/ifevalg_opd/trainable_vectors",
-        data="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/ifevalg/ifevalg_train.parquet",
+        path=model_path('DeepSeek-R1-Distill-Qwen-7B'),
+        vec_root=artifact_path('repre/ifevalg_opd/trainable_vectors'),
+        data=data_path('ifevalg/ifevalg_train.parquet'),
     ),
 }
 _TAG = os.environ.get("MODEL_TAG", "qwen3-4b")
 MODEL_PATH = MODELS[_TAG]["path"]
 VEC_ROOT = MODELS[_TAG]["vec_root"]
 DATA = MODELS[_TAG]["data"]
-OUT = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
+OUT = project_path('analysis/vector_study/out')
 os.makedirs(OUT, exist_ok=True)
 
 N_PROMPTS = int(os.environ.get("N_PROMPTS", 32))

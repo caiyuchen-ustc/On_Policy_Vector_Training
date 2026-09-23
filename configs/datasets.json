@@ -1,0 +1,6 @@
+{
+  "math": {"repo_id": "caiyuchen/OPV-Math", "revision": "e6adbd63cce1e0e33f4a64189e371d195583c55c"},
+  "science": {"repo_id": "caiyuchen/OPV-Science", "revision": "cc4f6b0214c4af3ad09f9a8627c3bdb882fecc7b"},
+  "code": {"repo_id": "caiyuchen/OPV-Code", "revision": "34e839990ed226d1b1d07cb1690ede4c319b3f60"},
+  "instruction": {"repo_id": "caiyuchen/OPV-Instruction", "revision": "10956d6a3fa59428c933f139a680da074732d810"}
+}

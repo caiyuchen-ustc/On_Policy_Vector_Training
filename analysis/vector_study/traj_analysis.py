@@ -15,15 +15,17 @@
   out/trajectory_<tag>.csv   每个实验一份逐step逐layer的明细
   out/trajectory_summary.csv 每个(实验,层)的汇总(最终norm、最终cos_prev、总straightness等)
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re, csv
 import torch
 
 VEC_ROOTS = {
-    "qwen3-4b-opd": "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/opd/repre_qwen3-4b-opd/trainable_vectors",
-    "ifevalg-opd":  "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/ifevalg_opd/trainable_vectors",
-    "ifevalg-rl":   "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/ifevalg_rl/trainable_vectors",
+    "qwen3-4b-opd": artifact_path('repre/opd/repre_qwen3-4b-opd/trainable_vectors'),
+    "ifevalg-opd":  artifact_path('repre/ifevalg_opd/trainable_vectors'),
+    "ifevalg-rl":   artifact_path('repre/ifevalg_rl/trainable_vectors'),
 }
-OUT = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
+OUT = project_path('analysis/vector_study/out')
 os.makedirs(OUT, exist_ok=True)
 
 

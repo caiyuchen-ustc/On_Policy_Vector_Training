@@ -7,9 +7,11 @@ across all four SciKnowEval domains. Confirms the physics finding is universal:
   - injection magnitude is gentle (z-score w.r.t. per-direction activation std << 1).
 Prints a compact per-domain table; returns aggregate stats for figure making.
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import torch, numpy as np, glob, os, re
 
-ROOT = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/examples/deepseek1p5b_offline_distill/trainable_vectors"
+ROOT = artifact_path('examples/deepseek1p5b_offline_distill/trainable_vectors')
 DIRS = {"physics": "seqbasis_physics_layers5-15_lr5e-2",
         "chemistry": "seqbasis_chemistry_layers5-15_lr5e-2",
         "biology": "seqbasis_biology_layers5-15_lr5e-2",

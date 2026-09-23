@@ -10,13 +10,15 @@ We fit t-SNE on [random + off + on] but only plot the two trajectories (random s
 
 Output: figs/opd_traj_tsne.svg
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re
 import numpy as np
 import torch
 
-OFF = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/examples/deepseek1p5b_offline_distill/trainable_vectors/singlev_layers5-15_lr5e-2"
-ON = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/deepseek1p5b_rl_opd/trainable_vectors_seqbasis/repre_deepseek1p5b_rl_opd_seqbasis64_layers5-20_lr5e-2"
-OUTFIG = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/figs/opd_traj_tsne.svg"
+OFF = artifact_path('examples/deepseek1p5b_offline_distill/trainable_vectors/singlev_layers5-15_lr5e-2')
+ON = artifact_path('deepseek1p5b_rl_opd/trainable_vectors_seqbasis/repre_deepseek1p5b_rl_opd_seqbasis64_layers5-20_lr5e-2')
+OUTFIG = project_path('analysis/vector_study/figs/opd_traj_tsne.svg')
 V0_MAX_STEP = 100
 SHARED_LAYERS = list(range(5, 16))
 N_RANDOM = 1000

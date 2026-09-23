@@ -24,6 +24,8 @@
   out/logitlens_<model>.csv   每(exp,layer)一行
   out/logitlens_toptokens_<model>.txt  每(exp,layer)的top tokens
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re, csv, json
 import torch
 from safetensors import safe_open
@@ -31,19 +33,19 @@ from transformers import AutoTokenizer
 
 MODELS = {
     "qwen3-4b": {
-        "path": "/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/Qwen3-4B",
+        "path": model_path('Qwen3-4B'),
         "unembed_key": "model.embed_tokens.weight",   # tied
-        "vec_root": "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/opd/repre_qwen3-4b-opd/trainable_vectors",
+        "vec_root": artifact_path('repre/opd/repre_qwen3-4b-opd/trainable_vectors'),
         "rms_eps": 1e-6,
     },
     "deepseek7b": {
-        "path": "/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/DeepSeek-R1-Distill-Qwen-7B",
+        "path": model_path('DeepSeek-R1-Distill-Qwen-7B'),
         "unembed_key": "lm_head.weight",              # 独立 lm_head
-        "vec_root": "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/ifevalg_opd/trainable_vectors",
+        "vec_root": artifact_path('repre/ifevalg_opd/trainable_vectors'),
         "rms_eps": 1e-6,
     },
 }
-OUT = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
+OUT = project_path('analysis/vector_study/out')
 os.makedirs(OUT, exist_ok=True)
 TOPK = 15
 

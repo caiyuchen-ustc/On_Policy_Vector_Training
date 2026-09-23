@@ -15,15 +15,17 @@
 retention vs 层深 从 ~1 掉到 ~0 = 因果证据: 高层作用全在token空间。
 只需前向, 快。
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re, json, csv
 import numpy as np
 import torch
 
-MP="/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/Qwen3-4B"
-VR="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/opd/repre_qwen3-4b-opd/trainable_vectors"
-DATA="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/G-OPD-Training-Data/DeepMath-103K/train_filtered_level6.parquet"
-OUT="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
-FIG="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/figs"
+MP=model_path('Qwen3-4B')
+VR=artifact_path('repre/opd/repre_qwen3-4b-opd/trainable_vectors')
+DATA=data_path('G-OPD-Training-Data/DeepMath-103K/train_filtered_level6.parquet')
+OUT=project_path('analysis/vector_study/out')
+FIG=project_path('analysis/vector_study/figs')
 N_PROMPTS=24; MAX_TOK=200; RANK=256
 PROBE=[1,3,7,10,13,16,20,24,27,30,33,34]
 

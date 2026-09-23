@@ -10,13 +10,15 @@ a nearby endpoint region.
 
 Output: figs/opd_traj_2d.svg
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re
 import numpy as np
 import torch
 
-OFF = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/examples/deepseek1p5b_offline_distill/trainable_vectors/singlev_layers5-15_lr5e-2"
-ON = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/deepseek1p5b_rl_opd/trainable_vectors_seqbasis/repre_deepseek1p5b_rl_opd_seqbasis64_layers5-20_lr5e-2"
-OUTFIG = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/figs/opd_traj_2d.svg"
+OFF = artifact_path('examples/deepseek1p5b_offline_distill/trainable_vectors/singlev_layers5-15_lr5e-2')
+ON = artifact_path('deepseek1p5b_rl_opd/trainable_vectors_seqbasis/repre_deepseek1p5b_rl_opd_seqbasis64_layers5-20_lr5e-2')
+OUTFIG = project_path('analysis/vector_study/figs/opd_traj_2d.svg')
 V0_MAX_STEP = 100      # v0 phase (before first switch)
 SHARED_LAYERS = list(range(5, 16))   # 5..15 common to both runs
 

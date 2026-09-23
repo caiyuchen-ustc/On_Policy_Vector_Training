@@ -12,20 +12,22 @@
   低层若 proj_energy 低 -> 向量在"非token主方向"里; 高层若高 -> 落在token判别主方向。
   对照: 随机向量的 proj_energy(r) ≈ r/H。
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re, csv, json
 from collections import defaultdict
 import torch
 from safetensors import safe_open
 
-OUT = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
-FIG = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/figs"
+OUT = project_path('analysis/vector_study/out')
+FIG = project_path('analysis/vector_study/figs')
 os.makedirs(OUT, exist_ok=True); os.makedirs(FIG, exist_ok=True)
 
 MODELS = {
     "qwen3-4b": dict(
-        path="/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/Qwen3-4B",
+        path=model_path('Qwen3-4B'),
         unembed_key="model.embed_tokens.weight",
-        vec_root="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/repre/opd/repre_qwen3-4b-opd/trainable_vectors",
+        vec_root=artifact_path('repre/opd/repre_qwen3-4b-opd/trainable_vectors'),
         # 选一个跨层最广的受控实验做 step 演化
         step_exp="singlev_layers24-35_lr1e-3",
         step_exp_mid="singlev_layers10-25_lr5e-5",

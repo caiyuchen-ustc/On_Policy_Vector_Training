@@ -4,15 +4,17 @@ PCA spectrum in 4 bands: PC1-5 (principal), PC6-30 (mid), PC31-128 (tail), beyon
 (extreme tail). Shows whether v0 sits deepest in the extreme tail and how it shifts with the
 orthogonal sequence — for all four science domains.
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re, sys
 import torch
 import numpy as np
 import pandas as pd
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-MP = "/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/DeepSeek-R1-Distill-Qwen-1.5B"
-VEC_BASE = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/examples/deepseek1p5b_offline_distill/trainable_vectors"
-DATA_BASE = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/sciknoweval/by_domain"
+MP = model_path('DeepSeek-R1-Distill-Qwen-1.5B')
+VEC_BASE = artifact_path('examples/deepseek1p5b_offline_distill/trainable_vectors')
+DATA_BASE = data_path('sciknoweval/by_domain')
 STEER = list(range(5, 16))
 Q = 128
 

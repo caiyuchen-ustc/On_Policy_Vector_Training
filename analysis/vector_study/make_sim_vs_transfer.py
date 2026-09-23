@@ -14,6 +14,8 @@ hypothesis 'more similar -> more mutual promotion'; replace GAIN with measured j
 gains when available.
 Output: figs/opd_sim_vs_transfer.svg
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, itertools
 import numpy as np
 import torch
@@ -22,7 +24,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-BASE_DIR = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/examples/deepseek1p5b_offline_distill/trainable_vectors"
+BASE_DIR = artifact_path('examples/deepseek1p5b_offline_distill/trainable_vectors')
 DIRS = {"physics": "seqbasis_physics_layers5-15_lr5e-2",
         "chemistry": "seqbasis_chemistry_layers5-15_lr5e-2",
         "biology": "seqbasis_biology_layers5-15_lr5e-2",

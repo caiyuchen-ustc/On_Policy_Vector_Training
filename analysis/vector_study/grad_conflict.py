@@ -22,14 +22,16 @@
 另外报告一个不依赖 teacher 的量: 各层 hidden 的"每位置最优 logit 增量方向" W_U^T(onehot(argmax_next) − p) 的位置间一致性,
 反映"该层若要直接改输出, 各位置需求有多冲突"。
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re, csv, json
 import torch
 
-MODEL_PATH="/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/Qwen3-4B"
-TEACHER="/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/Qwen3-4B-Non-Thinking-RL-Math-Step500"
-DATA="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/G-OPD-Training-Data/DeepMath-103K/train_filtered_level6.parquet"
-OUT="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
-FIG="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/figs"
+MODEL_PATH=model_path('Qwen3-4B')
+TEACHER=model_path('Qwen3-4B-Non-Thinking-RL-Math-Step500')
+DATA=data_path('G-OPD-Training-Data/DeepMath-103K/train_filtered_level6.parquet')
+OUT=project_path('analysis/vector_study/out')
+FIG=project_path('analysis/vector_study/figs')
 N_PROMPTS=16; MAX_TOK=160; SAMPLE_POS=200   # 每层随机采样这么多位置算两两cos
 
 

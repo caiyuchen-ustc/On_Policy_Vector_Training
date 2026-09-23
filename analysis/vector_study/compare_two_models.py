@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """双模型对比总图: qwen3-4b (数学OPD) vs deepseek7b (IF OPD)。
 把 logit-lens熵、W_U能量、hidden子空间能量 三个指标按 归一化层深(depth/nlayer) 画在一起对比。"""
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os,csv
 from collections import defaultdict
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 
-OUT="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
-FIG="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/figs"
+OUT=project_path('analysis/vector_study/out')
+FIG=project_path('analysis/vector_study/figs')
 NLAYER={"qwen3-4b":36,"deepseek7b":28}
 BASE_NE={"qwen3-4b":0.9498,"deepseek7b":0.9594}
 

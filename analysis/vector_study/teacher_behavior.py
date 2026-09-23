@@ -7,25 +7,27 @@
     - transition (中低层 push-through 的目标): Okay/Alright/So/</think>...
   看向量在模仿 teacher 相对 base 多出来的哪部分行为。
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, re, json, collections
 import pandas as pd, numpy as np
 
 MODELS={
     "qwen3-4b": dict(
-        teacher="/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/Qwen3-4B-Non-Thinking-RL-Math-Step500",
-        base="/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/Qwen3-4B",
-        data="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/G-OPD-Training-Data/DeepMath-103K/train_filtered_level6.parquet",
+        teacher=model_path('Qwen3-4B-Non-Thinking-RL-Math-Step500'),
+        base=model_path('Qwen3-4B'),
+        data=data_path('G-OPD-Training-Data/DeepMath-103K/train_filtered_level6.parquet'),
     ),
     "deepseek7b": dict(
-        teacher="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/examples/ifevalg_rl/ifevalg_qwen2.5-7b-fullparam_lr1e-6/global_step_825/hf_model",
-        base="/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/DeepSeek-R1-Distill-Qwen-7B",
-        data="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/ifevalg/ifevalg_train.parquet",
+        teacher=artifact_path('examples/ifevalg_rl/ifevalg_qwen2.5-7b-fullparam_lr1e-6/global_step_825/hf_model'),
+        base=model_path('DeepSeek-R1-Distill-Qwen-7B'),
+        data=data_path('ifevalg/ifevalg_train.parquet'),
     ),
 }
 _TAG=os.environ.get("MODEL_TAG","qwen3-4b")
 TEACHER=MODELS[_TAG]["teacher"]; BASE=MODELS[_TAG]["base"]; DATA=MODELS[_TAG]["data"]
-OUT="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
-FIG="/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/figs"
+OUT=project_path('analysis/vector_study/out')
+FIG=project_path('analysis/vector_study/figs')
 N=64; MAXGEN=1024
 
 REFLECT=[r"\bWait\b",r"\bBut\b",r"\bHmm+\b",r"\bAlternatively\b",r"\bPerhaps\b",r"\bMaybe\b",

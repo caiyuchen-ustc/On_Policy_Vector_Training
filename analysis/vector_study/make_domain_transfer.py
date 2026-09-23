@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Steering-vector similarity predicts cross-domain transfer gain."""
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, itertools, glob, re
 import numpy as np
 import torch
@@ -10,7 +12,7 @@ import matplotlib.pyplot as plt
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIG = os.path.join(HERE, "figs", "opd_domain_transfer.svg")
-BASE_DIR = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/examples/deepseek1p5b_offline_distill/trainable_vectors"
+BASE_DIR = artifact_path('examples/deepseek1p5b_offline_distill/trainable_vectors')
 DIRS = {"physics": "seqbasis_physics_layers5-15_lr5e-2",
         "chemistry": "seqbasis_chemistry_layers5-15_lr5e-2",
         "biology": "seqbasis_biology_layers5-15_lr5e-2",

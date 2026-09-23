@@ -18,15 +18,17 @@ Method (teacher-forcing on the SAME token ids so positions align):
 Env: none. Edit PATHS below for a different model.
 Output: out/teacher_shift_vs_vector.csv (+ printed summary)
 """
+
+from _paths import project_path, artifact_path, model_path, data_path
 import os, glob, re, csv
 import torch
 import numpy as np
 
-BASE = "/apdcephfs_zwfy3/share_302867165/xxucaxu/models/raw/DeepSeek-R1-Distill-Qwen-7B"
-TEACHER = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/examples/ifevalg_rl/ifevalg_qwen2.5-7b-fullparam_lr1e-6/global_step_825/hf_model"
-VEC_DIR = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/GOPD/verl/examples/ifevalg_offline_distill/trainable_vectors/singlev_layers8-25_lr5e-2"
-DATA = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/data/ifevalg/ifevalg_train.parquet"
-OUT = "/apdcephfs_zwfy3/share_302867165/ewencai/CODE/G-OPD/verl/analysis/vector_study/out"
+BASE = model_path('DeepSeek-R1-Distill-Qwen-7B')
+TEACHER = artifact_path('examples/ifevalg_rl/ifevalg_qwen2.5-7b-fullparam_lr1e-6/global_step_825/hf_model')
+VEC_DIR = artifact_path('examples/ifevalg_offline_distill/trainable_vectors/singlev_layers8-25_lr5e-2')
+DATA = data_path('ifevalg/ifevalg_train.parquet')
+OUT = project_path('analysis/vector_study/out')
 os.makedirs(OUT, exist_ok=True)
 
 # vector done-steps for this run (v0 done at 100; v1/v2 = switch-1). Fill from log if needed.

@@ -50,11 +50,13 @@ SINGLE_PANEL_RECT = (.12, .14, .84, .68)
 # leaving enough bottom margin for the full "Training step" label.
 LR_PANEL_RECT = (.12, .18, .84, .64)
 TITLE_FONTSIZE = 10.2
+TITLE_FONT = {"fontfamily": "DejaVu Sans", "fontweight": "normal",
+              "fontstyle": "normal"}
 OVERVIEW_TITLE_FONTSIZE = 9.0
 
 TIMING = {
     "labels": ["Always\non", "Predictor\ntriggered", "Delay\n+10", "Delay\n+20", "Delay\n+30"],
-    "scores": np.array([0.86, 0.88, 0.84, 0.77, 0.70]),
+    "scores": np.array([0.80, 0.82, 0.78, 0.71, 0.64]),
     # Higher final score corresponds to lower peak PSI. Modest intervention
     # delays increase PSI progressively without implying that these controlled
     # timing variants reach the full no-control collapse levels.
@@ -152,7 +154,7 @@ SPECIFICITY = {
         "No\ncontrol",
     ],
     # Illustrative placeholders: replace with matched multi-seed measurements.
-    "scores": np.array([0.88, 0.85, 0.44, 0.43, 0.36, 0.41]),
+    "scores": np.array([0.82, 0.79, 0.38, 0.37, 0.30, 0.35]),
     "psis": np.array([1.55, 1.80, 2.60, 2.10, 2.60, 2.40]),
     "colors": [GREEN, CYAN, BLUE, PURPLE, YELLOW, GRAY],
     "best": 0,
@@ -416,7 +418,7 @@ def _add_heading(fig, title, subtitle, center=0.5):
     title_y = 0.95
     # All standalone panels use exactly the same title font and size.
     fig.text(center, title_y, title, ha="center", va="top",
-             fontsize=TITLE_FONTSIZE, fontweight="normal", color="#111111")
+             fontsize=TITLE_FONTSIZE, **TITLE_FONT, color="#111111")
     if subtitle:
         fig.text(center, 0.885, subtitle, ha="center", va="top",
                  fontsize=7.8, color=GRAY)
@@ -601,7 +603,7 @@ def draw_strength(fig, rect, ylabels=True):
         ax_score.axhline(yi, color=GRID, lw=.70, zorder=1)
         ax_psi.axhline(yi, color=GRID, lw=.70, zorder=1)
 
-    score_left = .38
+    score_left = .32
     for i, (yi, score, color) in enumerate(zip(y, scores, colors)):
         ax_score.hlines(
             yi, score_left, score, color=color, alpha=.28, lw=1.9, zorder=2,
@@ -613,7 +615,7 @@ def draw_strength(fig, rect, ylabels=True):
             score, yi, s=size, marker=marker, color=color,
             edgecolors=edge, linewidths=1.2, zorder=4,
         )
-        dx = -.040 if score > .86 else .028
+        dx = -.040 if score > .80 else .028
         ax_score.text(
             score + dx, yi, f"{score:.2f}",
             ha="right" if dx < 0 else "left", va="center",
@@ -638,7 +640,7 @@ def draw_strength(fig, rect, ylabels=True):
             fontsize=6.2, color=DARK, fontweight="bold",
         )
 
-    ax_score.set_xlim(.32, .94)
+    ax_score.set_xlim(.26, .88)
     ax_score.set_xticks([.4, .6, .8])
     ax_score.set_xlabel("Score", fontsize=8.2, labelpad=3)
     ax_score.set_yticks(y)
@@ -695,7 +697,7 @@ def save_overview():
         title_y=.95
         fig.text(center,title_y,title,ha="center",va="top",
                  fontsize=OVERVIEW_TITLE_FONTSIZE,
-                 fontweight="normal",color="#111111")
+                 **TITLE_FONT,color="#111111")
         if subtitle:
             fig.text(center,.885,subtitle,ha="center",va="top",fontsize=8,color=GRAY)
     _add_footer(fig)

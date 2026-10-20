@@ -157,3 +157,20 @@ python scripts/check_repository.py
 See [testing](docs/validation.md) for test coverage and GPU checks, and
 `examples/representation/` for individual experiment settings. The verl foundation
 retains its Apache-2.0 license and [upstream documentation](docs/UPSTREAM_README.md).
+
+If you find this project interesting, feel free to ⭐ star the repository or open an issue for discussion!
+
+If you use this code in your research, please cite:
+
+```bibtex
+@misc{cai2026learningsteersteeringsee,
+      title={Learning to Steer, Steering to See: Unveiling the Geometry of RLVR in Large Language Models via Trainable Vectors}, 
+      author={Yuchen Cai and Ding Cao and Qixiang Yin and Xin Xu and Kai Yang and Siye Wu and Pengyuan Wang and Jiaxuan Wang and Weijie Liu and Saiyong Yang and Guangzhong Sun and Guiquan Liu and Junfeng Fang},
+      year={2026},
+      eprint={2609.34344},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2609.34344}, 
+}
+
+```
